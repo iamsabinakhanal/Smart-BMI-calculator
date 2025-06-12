@@ -1,19 +1,25 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import SmartBMI from './component/SmartBMI'
-import NutriPlanSuggest from './component/NutriPlanSuggest'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { Suspense, lazy } from 'react';
+import Navbar from './component/Navbar';
+const SmartBMI = lazy(() => import('./component/SmartBMI'));
+const NutriPlanSuggest = lazy(() => import('./component/NutriPlanSuggest'));
+const BMICalculator = lazy(() => import('./component/BMICalculator'));
 
 function App() {
   const [count, setCount] = useState(0)
 
   return (
-    <>
-   
-       <SmartBMI />
-       <NutriPlanSuggest/>
-    </>
+    <Router>
+      <Suspense fallback={<div>Loading...</div>}>
+        <Routes>
+          <Route path="/" element={<SmartBMI />} />
+          <Route path="/bmi" element={<BMICalculator />} />
+          <Route path="/nutrition" element={<NutriPlanSuggest />} />
+          <Route path="/navbar" element={<Navbar />} />
+        </Routes>
+      </Suspense>
+    </Router>
   )
 }
 

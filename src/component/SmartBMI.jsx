@@ -3,23 +3,11 @@ import '../styles/SmartBMI.css';
 import lady from "../assets/images/lady.png"
 
 import  exercise from"../assets/images/exercise.png"
+import Navbar from './Navbar';
 const SmartBMI = () => {
   return (
     <>
-      {/* HEADER */}
-      <header>
-        {/* NAVBAR */}
-        <div className="navbar">
-          <div className="logo">SmartBMI</div>
-          <nav className="nav-links">
-            <a href="#">Home</a>
-            <a href="#">About</a>
-            <a href="#">Contact</a>
-            <button href="#">LOGIN </button>
-            <button href="#">SIGNUP </button>
-          </nav>
-        </div>
-
+    <Navbar/>
         {/* HERO SECTION */}
         <section className="hero">
           <div className="hero-text">
@@ -46,7 +34,6 @@ const SmartBMI = () => {
           <h5>No Need Gym/Zumba</h5>
           <img src={exercise} alt="Gym equipment collage" />
         </section>
-      </header>
     </>
   );
 };
