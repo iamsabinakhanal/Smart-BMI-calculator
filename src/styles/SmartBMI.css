@@ -166,7 +166,17 @@
     transform: scale(1.05);
     box-shadow: 0 6px 20px rgba(0, 255, 255, 0.5);
   }
+  .fitness-btn {
+    /* Inherit styles from .health-insights-btn or duplicate styles */
+    background: linear-gradient(145deg, #40a291, #efff7bc9);
+    color: black;
+    box-shadow: 0 4px 10px rgba(255, 255, 0, 0.3);
+  }
   
+  .fitness-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(255, 255, 0, 0.5);
+  }
   /* New section styles */
   .equipment-section {
     padding: 40px;

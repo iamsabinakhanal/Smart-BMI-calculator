@@ -1,19 +1,22 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import SmartBMI from './component/SmartBMI'
-import NutriPlanSuggest from './component/NutriPlanSuggest'
+import { Suspense, lazy } from 'react'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+
+// Lazy load components
+const SmartBMI = lazy(() => import('./component/SmartBMI'))
+const NutriPlanSuggest = lazy(() => import('./component/NutriPlanSuggest'))
+const Fitness = lazy(() => import('./component/Fitness'))
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-   
-       <SmartBMI />
-       <NutriPlanSuggest/>
-    </>
+    <Router>
+      <Suspense fallback={<div>Loading...</div>}>
+        <Routes>
+          <Route path="/" element={<SmartBMI />} />
+          <Route path="/nutrition" element={<NutriPlanSuggest />} />
+          <Route path="/fitness" element={<Fitness />} />
+        </Routes>
+      </Suspense>
+    </Router>
   )
 }
 
