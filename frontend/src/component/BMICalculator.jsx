@@ -41,7 +41,7 @@ export default function BMICalculator() {
   });
   const [bmi, setBmi] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [aiRecommendation, setAiRecommendation] = useState("");
+  const [aiRecommendation, setAiRecommendation] = useState(""); // Holds combined nutrition+fitness plan text
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -54,7 +54,7 @@ export default function BMICalculator() {
     setLoading(true);
     try {
       const response = await axios.post("http://localhost:5000/predict", {
-        RIAGENDR: 1,
+        RIAGENDR: 1,  // hardcoded gender for now
         RIDAGEYR: Number(formData.age),
         BMXWT: Number(formData.weight),
         BMXHT: Number(formData.height),
@@ -71,22 +71,55 @@ export default function BMICalculator() {
     }
   };
 
+  // <-- UPDATED: fetch nutrition and fitness plans separately and combine results
   useEffect(() => {
     if (bmi) {
-      const generateRecommendation = async () => {
+      const generatePlans = async () => {
         try {
-          const response = await axios.post("http://localhost:5000/generate-plan", {
-            type: "combined",
+          const lifestyleLabel = lifestyleOptions.find(
+            o => o.value === Number(formData.lifestyle)
+          )?.label;
+
+          // Fetch Nutrition Plan
+          const nutritionRes = await axios.post("http://localhost:5000/generate-plan", {
+            type: "nutrition",
             age: formData.age,
             bmi: bmi.toFixed(1),
-            lifestyle: lifestyleOptions.find(o => o.value === formData.lifestyle)?.label
+            lifestyle: lifestyleLabel
           });
-          setAiRecommendation(response.data.plan);
+
+          // Fetch Fitness Plan
+          const fitnessRes = await axios.post("http://localhost:5000/generate-plan", {
+            type: "fitness",
+            age: formData.age,
+            bmi: bmi.toFixed(1),
+            lifestyle: lifestyleLabel
+          });
+
+          const meals = nutritionRes.data.plan?.meals || [];
+          const exercises = fitnessRes.data.plan || [];
+
+          // Format nutrition plan text
+          let nutritionText = "🍽️ Nutrition Plan:\n";
+          meals.forEach((meal, index) => {
+            nutritionText += `${index + 1}. ${meal.title} (${meal.readyInMinutes} mins)\n`;
+          });
+
+          // Format fitness plan text
+          let fitnessText = "\n💪 Fitness Plan:\n";
+          exercises.forEach((ex, index) => {
+            const desc = ex.description?.replace(/<[^>]*>/g, '') || ''; // Strip HTML tags
+            fitnessText += `${index + 1}. ${ex.name} - ${desc}\n\n`;
+          });
+
+          setAiRecommendation(nutritionText + fitnessText);  // Set combined text
+
         } catch (error) {
-          console.error("AI recommendation error:", error);
+          console.error("Plan generation error:", error);
         }
       };
-      generateRecommendation();
+
+      generatePlans();
     }
   }, [bmi, formData.age, formData.lifestyle]);
 
@@ -104,7 +137,10 @@ export default function BMICalculator() {
           age: formData.age,
           bmi: bmi.toFixed(1),
           lifestyle: formData.lifestyle,
-          category: getBmiCategory(bmi)
+          category: getBmiCategory(bmi),
+          income: formData.income,
+          ethnicity: formData.ethnicity
+          // age, bmi, lifestyle, income, ethnicity 
         }
       });
     }
@@ -230,11 +266,9 @@ export default function BMICalculator() {
             {aiRecommendation && (
               <div className="recommendation">
                 <h3>Personalized Health Plan</h3>
-                <div className="recommendation-content">
-                  {aiRecommendation.split('\n').map((para, i) => (
-                    <p key={i}>{para}</p>
-                  ))}
-                </div>
+                <pre style={{ whiteSpace: 'pre-wrap' }}>
+                  {aiRecommendation}
+                </pre>
               </div>
             )}
 

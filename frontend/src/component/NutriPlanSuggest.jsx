@@ -6,7 +6,7 @@ export default function NutritionPlan() {
   const location = useLocation();
   const { age, bmi, lifestyle } = location.state || {};
 
-  const [plan, setPlan] = useState("");
+  const [plan, setPlan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -32,6 +32,7 @@ export default function NutritionPlan() {
         setLoading(false);
       }
     }
+
     fetchPlan();
   }, [age, bmi, lifestyle]);
 
@@ -41,7 +42,24 @@ export default function NutritionPlan() {
   return (
     <div>
       <h1>Nutrition Plan</h1>
-      <pre style={{ whiteSpace: "pre-wrap" }}>{plan}</pre>
+      {plan ? (
+        <>
+          <h2>Meals</h2>
+          <ul>
+            {plan.map((p, i) => (
+              <>
+                {p.meals.map((meal, i) => (
+                  <li key={i}>
+                    🍽️ {meal.title} — {meal.readyInMinutes} mins
+                  </li>
+                ))}
+              </>
+            ))}
+          </ul>
+        </>
+      ) : (
+        <p>No meals found.</p>
+      )}
     </div>
   );
 }
