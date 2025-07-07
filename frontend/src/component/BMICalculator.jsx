@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <<<<<<< HEAD:src/component/BMICalculator.jsx
 import React, { useState } from 'react';
 import '../styles/BMICalculator.css';
@@ -94,6 +95,8 @@ const BMICalculator = () => {
             <p>Category: <span>{category}</span></p>
             <p className="advice">{getAdvice(category)}</p>
 =======
+=======
+>>>>>>> origin/Dipika
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -137,7 +140,11 @@ export default function BMICalculator() {
   });
   const [bmi, setBmi] = useState(null);
   const [loading, setLoading] = useState(false);
+<<<<<<< HEAD
   const [aiRecommendation, setAiRecommendation] = useState("");
+=======
+  const [aiRecommendation, setAiRecommendation] = useState(""); // Holds combined nutrition+fitness plan text
+>>>>>>> origin/Dipika
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -150,7 +157,11 @@ export default function BMICalculator() {
     setLoading(true);
     try {
       const response = await axios.post("http://localhost:5000/predict", {
+<<<<<<< HEAD
         RIAGENDR: 1,
+=======
+        RIAGENDR: 1,  // hardcoded gender for now
+>>>>>>> origin/Dipika
         RIDAGEYR: Number(formData.age),
         BMXWT: Number(formData.weight),
         BMXHT: Number(formData.height),
@@ -167,6 +178,7 @@ export default function BMICalculator() {
     }
   };
 
+<<<<<<< HEAD
   useEffect(() => {
     if (bmi) {
       const generateRecommendation = async () => {
@@ -183,6 +195,57 @@ export default function BMICalculator() {
         }
       };
       generateRecommendation();
+=======
+  // <-- UPDATED: fetch nutrition and fitness plans separately and combine results
+  useEffect(() => {
+    if (bmi) {
+      const generatePlans = async () => {
+        try {
+          const lifestyleLabel = lifestyleOptions.find(
+            o => o.value === Number(formData.lifestyle)
+          )?.label;
+
+          // Fetch Nutrition Plan
+          const nutritionRes = await axios.post("http://localhost:5000/generate-plan", {
+            type: "nutrition",
+            age: formData.age,
+            bmi: bmi.toFixed(1),
+            lifestyle: lifestyleLabel
+          });
+
+          // Fetch Fitness Plan
+          const fitnessRes = await axios.post("http://localhost:5000/generate-plan", {
+            type: "fitness",
+            age: formData.age,
+            bmi: bmi.toFixed(1),
+            lifestyle: lifestyleLabel
+          });
+
+          const meals = nutritionRes.data.plan?.meals || [];
+          const exercises = fitnessRes.data.plan || [];
+
+          // Format nutrition plan text
+          let nutritionText = "🍽️ Nutrition Plan:\n";
+          meals.forEach((meal, index) => {
+            nutritionText += `${index + 1}. ${meal.title} (${meal.readyInMinutes} mins)\n`;
+          });
+
+          // Format fitness plan text
+          let fitnessText = "\n💪 Fitness Plan:\n";
+          exercises.forEach((ex, index) => {
+            const desc = ex.description?.replace(/<[^>]*>/g, '') || ''; // Strip HTML tags
+            fitnessText += `${index + 1}. ${ex.name} - ${desc}\n\n`;
+          });
+
+          setAiRecommendation(nutritionText + fitnessText);  // Set combined text
+
+        } catch (error) {
+          console.error("Plan generation error:", error);
+        }
+      };
+
+      generatePlans();
+>>>>>>> origin/Dipika
     }
   }, [bmi, formData.age, formData.lifestyle]);
 
@@ -200,7 +263,14 @@ export default function BMICalculator() {
           age: formData.age,
           bmi: bmi.toFixed(1),
           lifestyle: formData.lifestyle,
+<<<<<<< HEAD
           category: getBmiCategory(bmi)
+=======
+          category: getBmiCategory(bmi),
+          income: formData.income,
+          ethnicity: formData.ethnicity
+          // age, bmi, lifestyle, income, ethnicity 
+>>>>>>> origin/Dipika
         }
       });
     }
@@ -326,11 +396,17 @@ export default function BMICalculator() {
             {aiRecommendation && (
               <div className="recommendation">
                 <h3>Personalized Health Plan</h3>
+<<<<<<< HEAD
                 <div className="recommendation-content">
                   {aiRecommendation.split('\n').map((para, i) => (
                     <p key={i}>{para}</p>
                   ))}
                 </div>
+=======
+                <pre style={{ whiteSpace: 'pre-wrap' }}>
+                  {aiRecommendation}
+                </pre>
+>>>>>>> origin/Dipika
               </div>
             )}
 
@@ -348,11 +424,15 @@ export default function BMICalculator() {
                 View Detailed Fitness Plan
               </button>
             </div>
+<<<<<<< HEAD
 >>>>>>> Development:frontend/src/component/BMICalculator.jsx
+=======
+>>>>>>> origin/Dipika
           </div>
         )}
       </div>
 
+<<<<<<< HEAD
 <<<<<<< HEAD:src/component/BMICalculator.jsx
       <div className="category-box">
         <div className="header-section">
@@ -413,6 +493,8 @@ const getAdvice = (category) => {
 
 export default BMICalculator;
 =======
+=======
+>>>>>>> origin/Dipika
       <div className="reference-section">
         <div className="reference-card">
           <h3>BMI Categories</h3>
@@ -497,5 +579,9 @@ export default BMICalculator;
       </div>
     </div>
   );
+<<<<<<< HEAD
 }
 >>>>>>> Development:frontend/src/component/BMICalculator.jsx
+=======
+}
+>>>>>>> origin/Dipika

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <<<<<<< HEAD:src/styles/BMICalculator.css
 /* General Styles */
 body {
@@ -242,6 +243,8 @@ th {
     width: 100%;
     margin-bottom: 1.5rem;
 =======
+=======
+>>>>>>> origin/Dipika
 .calculator-container {
   display: flex;
   gap: 2rem;
@@ -487,6 +490,9 @@ button:disabled {
   
   .bmi-value {
     font-size: 2rem;
+<<<<<<< HEAD
 >>>>>>> Development:frontend/src/styles/BMICalculator.css
+=======
+>>>>>>> origin/Dipika
   }
 }
