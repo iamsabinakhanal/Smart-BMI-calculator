@@ -1,17 +1,3 @@
-<<<<<<< HEAD
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import joblib
-import numpy as np
-import os
-import openai
-from dotenv import load_dotenv
-
-# Load environment variables from .env
-load_dotenv()
-
-# Initialize Flask app
-=======
 import requests
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -23,12 +9,11 @@ import random
 # Load .env variables
 load_dotenv()
 
->>>>>>> origin/Dipika
-app = Flask(__name__)
+app = Flask(_name_)
 CORS(app)
 
 # Load BMI prediction model
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.abspath(_file_))
 model_path = os.path.join(BASE_DIR, 'models', 'bmi_model.pkl')
 
 try:
@@ -36,15 +21,6 @@ try:
 except Exception as e:
     raise RuntimeError(f"Failed to load model: {e}")
 
-<<<<<<< HEAD
-# Set OpenAI API key from environment
-openai.api_key = os.getenv("OPENAI_API_KEY")
-if not openai.api_key:
-    raise ValueError("OPENAI_API_KEY not set. Please check your .env file.")
-
-
-=======
->>>>>>> origin/Dipika
 @app.route('/predict', methods=['POST', 'OPTIONS'])
 def predict():
     if request.method == 'OPTIONS':
@@ -60,10 +36,7 @@ def predict():
         data.get('DMQADFC'),
         data.get('INDFMPIR')
     ]
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/Dipika
     if any(f is None for f in features):
         return jsonify({'error': 'Missing input features'}), 400
 
@@ -76,8 +49,6 @@ def predict():
     return jsonify({'predicted_bmi': round(float(predicted_bmi), 2)})
 
 
-<<<<<<< HEAD
-=======
 def fetch_exercises_by_categories(categories):
     exercise_results = []
     WGER_API = "https://wger.de/api/v2/exerciseinfo/"
@@ -110,56 +81,22 @@ def fetch_exercises_by_categories(categories):
     return exercise_results
 
 
->>>>>>> origin/Dipika
 @app.route('/generate-plan', methods=['POST', 'OPTIONS'])
 def generate_plan():
     if request.method == 'OPTIONS':
         return jsonify({'status': 'ok'}), 200
 
     data = request.json
-<<<<<<< HEAD
-    plan_type = data.get("type")  # 'nutrition' or 'fitness'
-    age = data.get("age")
-    bmi = data.get("bmi")
-    lifestyle = data.get("lifestyle")
-=======
     plan_type = data.get("type")
     age = data.get("age")
     bmi = float(data.get("bmi"))
     lifestyle = data.get("lifestyle")
     income = int(data.get("income", 3))
     ethnicity = int(data.get("ethnicity", 3))
->>>>>>> origin/Dipika
 
     if not all([plan_type, age, bmi]):
         return jsonify({"error": "Missing required fields"}), 400
 
-<<<<<<< HEAD
-    prompt = f"""
-    You are a helpful and professional health assistant.
-    Generate a detailed {plan_type} plan for a female aged {age}, with BMI {bmi}, and lifestyle level '{lifestyle}'.
-    Give specific, practical and achievable suggestions for the next 4 weeks.
-    Use a friendly and encouraging tone.
-    """
-
-    try:
-        response = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=600,
-            temperature=0.7,
-        )
-        plan_text = response.choices[0].message.content.strip()
-        return jsonify({"plan": plan_text})
-    except Exception as e:
-        import traceback
-        print("OpenAI ERROR:", str(e))
-        traceback.print_exc()
-        return jsonify({"error": f"OpenAI error: {str(e)}"}), 500
-
-=======
     # PERSONALIZATION LOGIC
     def adjust_calories(bmi, lifestyle, income):
         base = 2000
@@ -251,7 +188,6 @@ def generate_plan():
 
     else:
         return jsonify({"error": "Invalid plan type"}), 400
->>>>>>> origin/Dipika
 
-if __name__ == '__main__':
+if _name_ == '_main_':
     app.run(debug=True)

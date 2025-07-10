@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import React, { Suspense, lazy } from 'react';
 import Navbar from './component/Navbar';
 import FitnessPlan from './component/FitnessPlan';
+import FeedbackForm from './component/FeedbackForm'
 const SmartBMI = lazy(() => import('./component/SmartBMI'));
 const NutriPlanSuggest = lazy(() => import('./component/NutriPlanSuggest'));
 const BMICalculator = lazy(() => import('./component/BMICalculator'));
@@ -19,6 +20,7 @@ function App() {
           <Route path="/nutrition" element={<NutriPlanSuggest />} />
           <Route path="/navbar" element={<Navbar />} />
           <Route path="/fitness" element={<FitnessPlan />} />
+          <Route path="/feedback" element={<FeedbackForm />} />
         </Routes>
       </Suspense>
     </Router>
