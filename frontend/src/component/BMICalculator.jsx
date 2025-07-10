@@ -36,12 +36,17 @@ const bmiCategories = [
 
 export default function BMICalculator() {
   const [formData, setFormData] = useState({
-    age: "", weight: "", height: "",
-    ethnicity: 3, lifestyle: 3, income: 3
+    name: "",
+    age: "",
+    weight: "",
+    height: "",
+    ethnicity: 3,
+    lifestyle: 3,
+    income: 3
   });
   const [bmi, setBmi] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [aiRecommendation, setAiRecommendation] = useState(""); // Holds combined nutrition+fitness plan text
+  const [aiRecommendation, setAiRecommendation] = useState("");
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -53,6 +58,7 @@ export default function BMICalculator() {
     e.preventDefault();
     setLoading(true);
     try {
+      // Call Flask API to calculate BMI
       const response = await axios.post("http://localhost:5000/predict", {
         RIAGENDR: 1,  // hardcoded gender for now
         RIDAGEYR: Number(formData.age),
@@ -62,16 +68,30 @@ export default function BMICalculator() {
         DMQADFC: Number(formData.lifestyle),
         INDFMPIR: Number(formData.income)
       });
-      setBmi(response.data.predicted_bmi);
+      const predictedBmi = response.data.predicted_bmi;
+      setBmi(predictedBmi);
+
+      // Send all user data including name and calculated BMI to your Node backend
+      await axios.post("http://localhost:8000/admin/user", {
+        name: formData.name,
+        age: Number(formData.age),
+        weight: Number(formData.weight),
+        height: Number(formData.height),
+        bmi: predictedBmi,
+        ethnicity: Number(formData.ethnicity),
+        lifestyle: Number(formData.lifestyle),
+        income: Number(formData.income)
+      });
+
+      alert("User data saved successfully!");
     } catch (error) {
-      alert("Error calculating BMI");
+      alert("Error calculating BMI or saving user data");
       console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
-  // <-- UPDATED: fetch nutrition and fitness plans separately and combine results
   useEffect(() => {
     if (bmi) {
       const generatePlans = async () => {
@@ -80,7 +100,6 @@ export default function BMICalculator() {
             o => o.value === Number(formData.lifestyle)
           )?.label;
 
-          // Fetch Nutrition Plan
           const nutritionRes = await axios.post("http://localhost:5000/generate-plan", {
             type: "nutrition",
             age: formData.age,
@@ -88,7 +107,6 @@ export default function BMICalculator() {
             lifestyle: lifestyleLabel
           });
 
-          // Fetch Fitness Plan
           const fitnessRes = await axios.post("http://localhost:5000/generate-plan", {
             type: "fitness",
             age: formData.age,
@@ -99,20 +117,18 @@ export default function BMICalculator() {
           const meals = nutritionRes.data.plan?.meals || [];
           const exercises = fitnessRes.data.plan || [];
 
-          // Format nutrition plan text
           let nutritionText = "🍽️ Nutrition Plan:\n";
           meals.forEach((meal, index) => {
             nutritionText += `${index + 1}. ${meal.title} (${meal.readyInMinutes} mins)\n`;
           });
 
-          // Format fitness plan text
           let fitnessText = "\n💪 Fitness Plan:\n";
           exercises.forEach((ex, index) => {
-            const desc = ex.description?.replace(/<[^>]*>/g, '') || ''; // Strip HTML tags
+            const desc = ex.description?.replace(/<[^>]*>/g, '') || '';
             fitnessText += `${index + 1}. ${ex.name} - ${desc}\n\n`;
           });
 
-          setAiRecommendation(nutritionText + fitnessText);  // Set combined text
+          setAiRecommendation(nutritionText + fitnessText);
 
         } catch (error) {
           console.error("Plan generation error:", error);
@@ -140,7 +156,6 @@ export default function BMICalculator() {
           category: getBmiCategory(bmi),
           income: formData.income,
           ethnicity: formData.ethnicity
-          // age, bmi, lifestyle, income, ethnicity 
         }
       });
     }
@@ -151,6 +166,18 @@ export default function BMICalculator() {
       <div className="form-section">
         <h2>BMI Calculator</h2>
         <form onSubmit={handleSubmit}>
+          {/* Name input */}
+          <div className="form-group">
+            <label>Name</label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
           <div className="form-group">
             <label>Age (years)</label>
             <input
@@ -232,7 +259,7 @@ export default function BMICalculator() {
           </div>
 
           <button type="submit" disabled={loading}>
-            {loading ? "Calculating..." : "Calculate BMI"}
+            {loading ? "Calculating..." : "Calculate BMI & Save User"}
           </button>
         </form>
 
@@ -244,7 +271,7 @@ export default function BMICalculator() {
                 <span className="bmi-value">{bmi.toFixed(1)}</span>
                 <span className="bmi-category">{getBmiCategory(bmi)}</span>
               </div>
-              
+
               <div className="bmi-visualization">
                 {bmiCategories.map((cat, index) => {
                   const isActive = getBmiCategory(bmi) === cat.category;
@@ -290,6 +317,7 @@ export default function BMICalculator() {
         )}
       </div>
 
+      {/* Reference Section */}
       <div className="reference-section">
         <div className="reference-card">
           <h3>BMI Categories</h3>
