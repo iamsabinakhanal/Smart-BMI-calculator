@@ -1,6 +1,6 @@
-const User = require('../models/User');
-const Plan = require('../models/Plan');
-const axios = require('axios');
+const User = require("../models/User");
+const Plan = require("../models/Plan");
+const axios = require("axios");
 
 function getLifestyleLabel(value) {
   const map = {
@@ -8,7 +8,7 @@ function getLifestyleLabel(value) {
     2: "Lightly Active",
     3: "Moderately Active",
     4: "Very Active",
-    5: "Extremely Active"
+    5: "Extremely Active",
   };
   return map[value] || "Moderately Active";
 }
@@ -24,16 +24,37 @@ exports.getAllUsers = async (req, res) => {
 
 exports.getAllPlans = async (req, res) => {
   try {
-    const plans = await Plan.find().populate('userId').sort({ generatedAt: -1 });
+    const plans = await Plan.find()
+      .populate("userId")
+      .sort({ generatedAt: -1 });
     res.json(plans);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch plans" });
   }
 };
 
+exports.storePlans = async (req, res) => {
+  try {
+    const { userId, nutritionPlan, fitnessPlan } = req.body;
+    const plans = new Plan({
+      fitnessPlan: fitnessPlan,
+      userId: userId,
+      nutritionPlan: nutritionPlan,
+      generatedAt: Date.now(),
+    });
+    await plans.save()
+    
+    res.json(plans);
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ message: "Failed to fetch plans" });
+  }
+};
+
 exports.addUser = async (req, res) => {
   try {
-    const { name, age, weight, height, bmi, lifestyle, income, ethnicity } = req.body;
+    const { name, age, weight, height, bmi, lifestyle, income, ethnicity } =
+      req.body;
 
     const newUser = new User({
       name,
@@ -43,7 +64,7 @@ exports.addUser = async (req, res) => {
       bmi,
       lifestyle,
       income,
-      ethnicity
+      ethnicity,
     });
 
     const savedUser = await newUser.save();
@@ -58,8 +79,11 @@ exports.updateUser = async (req, res) => {
   const { id } = req.params;
   const updateData = req.body;
   try {
-    const updatedUser = await User.findByIdAndUpdate(id, updateData, { new: true });
-    if (!updatedUser) return res.status(404).json({ message: "User not found" });
+    const updatedUser = await User.findByIdAndUpdate(id, updateData, {
+      new: true,
+    });
+    if (!updatedUser)
+      return res.status(404).json({ message: "User not found" });
     res.json({ message: "User updated", user: updatedUser });
   } catch (error) {
     res.status(500).json({ message: "Failed to update user" });
@@ -71,7 +95,7 @@ exports.deleteUser = async (req, res) => {
   try {
     await User.findByIdAndDelete(id);
     await Plan.deleteMany({ userId: id });
-    res.json({ message: 'User and related plans deleted' });
+    res.json({ message: "User and related plans deleted" });
   } catch (error) {
     res.status(500).json({ message: "Failed to delete user" });
   }
@@ -81,7 +105,7 @@ exports.deletePlan = async (req, res) => {
   const { id } = req.params;
   try {
     await Plan.findByIdAndDelete(id);
-    res.json({ message: 'Plan deleted' });
+    res.json({ message: "Plan deleted" });
   } catch (error) {
     res.status(500).json({ message: "Failed to delete plan" });
   }
@@ -91,54 +115,59 @@ exports.regeneratePlan = async (req, res) => {
   const { userId } = req.params;
   try {
     const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     const lifestyleLabel = getLifestyleLabel(user.lifestyle);
 
-    const nutritionRes = await axios.post('http://localhost:5000/generate-plan', {
-      type: 'nutrition',
-      age: user.age,
-      bmi: user.bmi,
-      lifestyle: lifestyleLabel,
-      income: user.income,
-      ethnicity: user.ethnicity
-    });
+    const nutritionRes = await axios.post(
+      "http://localhost:5000/generate-plan",
+      {
+        type: "nutrition",
+        age: user.age,
+        bmi: user.bmi,
+        lifestyle: lifestyleLabel,
+        income: user.income,
+        ethnicity: user.ethnicity,
+      }
+    );
 
-    const fitnessRes = await axios.post('http://localhost:5000/generate-plan', {
-      type: 'fitness',
+    const fitnessRes = await axios.post("http://localhost:5000/generate-plan", {
+      type: "fitness",
       age: user.age,
       bmi: user.bmi,
       lifestyle: lifestyleLabel,
       income: user.income,
-      ethnicity: user.ethnicity
+      ethnicity: user.ethnicity,
     });
 
     const newPlan = new Plan({
       userId: user._id,
       nutritionPlan: nutritionRes.data.plan,
-      fitnessPlan: fitnessRes.data.plan
+      fitnessPlan: fitnessRes.data.plan,
     });
 
     await newPlan.save();
-    res.json({ message: 'Plan regenerated', plan: newPlan });
+    res.json({ message: "Plan regenerated", plan: newPlan });
   } catch (error) {
     console.error("Flask error:", error.response?.data || error.message);
-    res.status(500).json({ message: 'Flask AI server error' });
+    res.status(500).json({ message: "Flask AI server error" });
   }
 };
 
 exports.getDashboardStats = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
-    const averageBMI = await User.aggregate([{ $group: { _id: null, avgBMI: { $avg: "$bmi" } } }]);
+    const averageBMI = await User.aggregate([
+      { $group: { _id: null, avgBMI: { $avg: "$bmi" } } },
+    ]);
     const goalDistribution = await User.aggregate([
-      { $group: { _id: "$lifestyle", count: { $sum: 1 } } }
+      { $group: { _id: "$lifestyle", count: { $sum: 1 } } },
     ]);
 
     res.json({
       totalUsers,
       averageBMI: averageBMI[0]?.avgBMI || 0,
-      goalDistribution
+      goalDistribution,
     });
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch stats" });
