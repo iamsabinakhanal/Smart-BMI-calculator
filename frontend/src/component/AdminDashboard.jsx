@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import '../styles/AdminDashboard.css';
 
 const ethnicityMap = {
   1: "Mexican American",
@@ -32,7 +33,6 @@ export default function AdminDashboard() {
   const [loadingPlans, setLoadingPlans] = useState(false);
   const [error, setError] = useState(null);
   const [stats, setStats] = useState(null);
-
   const [editingUser, setEditingUser] = useState(null);
   const [editFormData, setEditFormData] = useState({
     name: '',
@@ -44,6 +44,15 @@ export default function AdminDashboard() {
     income: '',
     ethnicity: ''
   });
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState({
+    title: '',
+    message: '',
+    onConfirm: null,
+    onCancel: null
+  });
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [showPlanDetails, setShowPlanDetails] = useState(false);
 
   const API_BASE = "http://localhost:8000/admin";
 
@@ -86,25 +95,56 @@ export default function AdminDashboard() {
     fetchStats();
   }, []);
 
+  const showConfirmation = (title, message, onConfirm, onCancel = () => setShowConfirmDialog(false)) => {
+    setDialogConfig({
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setShowConfirmDialog(false);
+      },
+      onCancel
+    });
+    setShowConfirmDialog(true);
+  };
+
   const deleteUser = async (id) => {
-    if (!window.confirm("Delete this user and their plans?")) return;
-    try {
-      await axios.delete(`${API_BASE}/user/${id}`);
-      fetchUsers();
-      fetchPlans();
-    } catch {
-      alert("Failed to delete user");
-    }
+    showConfirmation(
+      "Delete User",
+      "Are you sure you want to delete this user and all their plans?",
+      async () => {
+        try {
+          await axios.delete(`${API_BASE}/user/${id}`);
+          fetchUsers();
+          fetchPlans();
+        } catch {
+          showConfirmation(
+            "Error",
+            "Failed to delete user. Please try again.",
+            () => {}
+          );
+        }
+      }
+    );
   };
 
   const deletePlan = async (id) => {
-    if (!window.confirm("Delete this plan?")) return;
-    try {
-      await axios.delete(`${API_BASE}/plan/${id}`);
-      fetchPlans();
-    } catch {
-      alert("Failed to delete plan");
-    }
+    showConfirmation(
+      "Delete Plan",
+      "Are you sure you want to delete this plan?",
+      async () => {
+        try {
+          await axios.delete(`${API_BASE}/plan/${id}`);
+          fetchPlans();
+        } catch {
+          showConfirmation(
+            "Error",
+            "Failed to delete plan. Please try again.",
+            () => {}
+          );
+        }
+      }
+    );
   };
 
   const openEditModal = (user) => {
@@ -156,46 +196,40 @@ export default function AdminDashboard() {
       closeEditModal();
       fetchUsers();
     } catch {
-      alert("Failed to update user");
+      showConfirmation(
+        "Error",
+        "Failed to update user. Please try again.",
+        () => {}
+      );
     }
   };
 
+  const openPlanDetails = (plan) => {
+    setSelectedPlan(plan);
+    setShowPlanDetails(true);
+  };
+
+  const closePlanDetails = () => {
+    setSelectedPlan(null);
+    setShowPlanDetails(false);
+  };
+
   return (
-    <div style={{ 
-      padding: '2rem', 
-      maxWidth: '1200px', 
-      margin: 'auto', 
-      fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif", 
-      backgroundColor: '#fafafa',
-      minHeight: '100vh',
-    }}>
-      <h1 style={{ textAlign: 'center', marginBottom: '2rem', fontWeight: '700', fontSize: '2.5rem', color: '#222' }}>
-        Admin Dashboard
-      </h1>
+    <div className="admin-dashboard">
+      <h1 className="admin-header">Admin Dashboard</h1>
 
-      {error && <p style={{ color: 'red', marginBottom: '1rem', fontWeight: '600' }}>{error}</p>}
+      {error && <p className="error-message">{error}</p>}
 
-      <section style={{ 
-        marginBottom: '3rem', 
-        backgroundColor: '#fff', 
-        padding: '1.5rem 2rem', 
-        borderRadius: '12px', 
-        boxShadow: '0 4px 10px rgba(0,0,0,0.1)', 
-        display: 'flex', 
-        justifyContent: 'space-around', 
-        fontSize: '1.3rem',
-        fontWeight: '600',
-        color: '#333'
-      }}>
+      <section className="stats-container">
         {stats ? (
           <>
-            <div>
+            <div className="stat-item">
               Total Users<br />
-              <span style={{ fontSize: '2rem', color: '#0077cc' }}>{stats.totalUsers}</span>
+              <span className="stat-value">{stats.totalUsers}</span>
             </div>
-            <div>
+            <div className="stat-item">
               Average BMI<br />
-              <span style={{ fontSize: '2rem', color: '#28a745' }}>{stats.averageBMI.toFixed(2)}</span>
+              <span className="stat-value green">{stats.averageBMI.toFixed(2)}</span>
             </div>
           </>
         ) : (
@@ -203,27 +237,15 @@ export default function AdminDashboard() {
         )}
       </section>
 
-      <section style={{ marginBottom: '3rem' }}>
-        <h2 style={{ marginBottom: '1rem', color: '#0077cc', fontWeight: '700', fontSize: '1.8rem' }}>Users</h2>
+      <section>
+        <h2 className="section-header blue">Users</h2>
         {loadingUsers ? (
           <p>Loading users...</p>
         ) : (
-          <table
-            border="0"
-            cellPadding="12"
-            style={{
-              width: '100%',
-              borderCollapse: 'separate',
-              borderSpacing: '0 12px',
-              boxShadow: '0 4px 15px rgba(0,0,0,0.07)',
-              backgroundColor: '#fff',
-              borderRadius: '12px',
-              overflow: 'hidden',
-            }}
-          >
+          <table className="users-table">
             <thead>
-              <tr style={{ backgroundColor: '#0077cc', color: 'white', fontSize: '1rem' }}>
-                <th style={{ paddingLeft: '1.5rem', textAlign: 'left' }}>Name</th>
+              <tr className="table-header">
+                <th>Name</th>
                 <th>Age</th>
                 <th>Weight (kg)</th>
                 <th>Height (cm)</th>
@@ -231,71 +253,36 @@ export default function AdminDashboard() {
                 <th>Activity Level</th>
                 <th>Income Ratio</th>
                 <th>BMI</th>
-                <th style={{ paddingRight: '1.5rem' }}>Actions</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {users.length === 0 && (
                 <tr>
-                  <td colSpan="9" style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
-                    No users found.
-                  </td>
+                  <td colSpan="9" className="empty-state">No users found.</td>
                 </tr>
               )}
               {users.map((u, i) => (
-                <tr 
-                  key={u._id} 
-                  style={{ 
-                    backgroundColor: i % 2 === 0 ? '#f9f9f9' : 'white', 
-                    textAlign: 'center', 
-                    fontSize: '1rem',
-                    boxShadow: 'inset 0 -1px 0 #eee',
-                    transition: 'background-color 0.3s',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e6f0ff'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = i % 2 === 0 ? '#f9f9f9' : 'white'}
-                >
-                  <td style={{ paddingLeft: '1.5rem', fontWeight: '600', textAlign: 'left' }}>{u.name}</td>
-                  <td>{u.age}</td>
-                  <td>{u.weight}</td>
-                  <td>{u.height}</td>
-                  <td>{ethnicityMap[u.ethnicity]}</td>
-                  <td>{activityLevelMap[u.lifestyle]}</td>
-                  <td>{incomeMap[u.income]}</td>
-                  <td>{u.bmi}</td>
-                  <td style={{ paddingRight: '1.5rem' }}>
+                <tr key={u._id} className="table-row">
+                  <td className="table-cell-left">{u.name}</td>
+                  <td className="table-cell">{u.age}</td>
+                  <td className="table-cell">{u.weight}</td>
+                  <td className="table-cell">{u.height}</td>
+                  <td className="table-cell">{ethnicityMap[u.ethnicity]}</td>
+                  <td className="table-cell">{activityLevelMap[u.lifestyle]}</td>
+                  <td className="table-cell">{incomeMap[u.income]}</td>
+                  <td className="table-cell">{u.bmi}</td>
+                  <td className="table-cell">
                     <button
                       onClick={() => openEditModal(u)}
-                      style={{
-                        marginRight: '0.7rem',
-                        padding: '6px 12px',
-                        backgroundColor: '#0077cc',
-                        border: 'none',
-                        borderRadius: '6px',
-                        color: 'white',
-                        cursor: 'pointer',
-                        fontWeight: '600',
-                        transition: 'background-color 0.2s',
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#005fa3'}
-                      onMouseLeave={e => e.currentTarget.style.backgroundColor = '#0077cc'}
+                      className="btn btn-primary"
+                      style={{ marginRight: '0.7rem' }}
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => deleteUser(u._id)}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: '#e74c3c',
-                        border: 'none',
-                        borderRadius: '6px',
-                        color: 'white',
-                        cursor: 'pointer',
-                        fontWeight: '600',
-                        transition: 'background-color 0.2s',
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#c0392b'}
-                      onMouseLeave={e => e.currentTarget.style.backgroundColor = '#e74c3c'}
+                      className="btn btn-danger"
                     >
                       Delete
                     </button>
@@ -307,131 +294,105 @@ export default function AdminDashboard() {
         )}
       </section>
 
-      <section style={{ marginBottom: '3rem' }}>
-        <h2 style={{ marginBottom: '1rem', color: '#28a745', fontWeight: '700', fontSize: '1.8rem' }}>Plans</h2>
+      <section>
+        <h2 className="section-header blue">Nutrition & Fitness Plans</h2>
         {loadingPlans ? (
           <p>Loading plans...</p>
         ) : (
-          <table
-            border="0"
-            cellPadding="12"
-            style={{
-              width: '100%',
-              borderCollapse: 'separate',
-              borderSpacing: '0 15px',
-              boxShadow: '0 5px 20px rgba(0,0,0,0.08)',
-              backgroundColor: '#fff',
-              borderRadius: '12px',
-              overflow: 'hidden',
-            }}
-          >
+          <table className="plans-table">
             <thead>
-              <tr style={{ backgroundColor: '#28a745', color: 'white', fontSize: '1rem' }}>
-                <th style={{ paddingLeft: '1.5rem', textAlign: 'left' }}>User Name</th>
-                <th style={{ width: '40%' }}>Nutrition Plan</th>
-                <th style={{ width: '40%' }}>Fitness Plan</th>
-                <th>Generated At</th>
-                <th style={{ paddingRight: '1.5rem' }}>Actions</th>
+              <tr className="plans-header">
+                <th>User</th>
+                <th>Nutrition Plan</th>
+                <th>Fitness Plan</th>
+                <th>Generated</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {plans.length === 0 && (
                 <tr>
-                  <td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
-                    No plans found.
-                  </td>
+                  <td colSpan="5" className="empty-state">No plans found.</td>
                 </tr>
               )}
-              {plans.map((p, i) => (
-                <tr
-                  key={p._id}
-                  style={{
-                    backgroundColor: i % 2 === 0 ? '#f9f9f9' : 'white',
-                    verticalAlign: 'top',
-                    fontSize: '0.95rem',
-                    boxShadow: 'inset 0 -1px 0 #eee',
-                    transition: 'background-color 0.3s',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e6ffe6'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = i % 2 === 0 ? '#f9f9f9' : 'white'}
-                >
-                  <td style={{ fontWeight: '600', paddingLeft: '1.5rem', textAlign: 'left' }}>
-                    {p.userId?.name || "N/A"}
+              {plans.map((p) => (
+                <tr key={p._id} className="plan-row">
+                  <td className="plan-cell-left">
+                    <div className="plan-user-name">
+                      {p.userId?.name || "N/A"}
+                    </div>
                   </td>
 
-                  {/* Nutrition Plan */}
-                  <td
-                    style={{
-                      maxHeight: '360px',
-                      overflowY: 'auto',
-                      padding: '12px',
-                      backgroundColor: '#f0f9ff',
-                      borderRadius: '8px',
-                      lineHeight: '1.4',
-                    }}
-                  >
-                    {p.nutritionPlan.map(day => (
-                      <div key={day.day} style={{ marginBottom: '1.2rem' }}>
-                        <strong style={{ fontSize: '1.05rem', color: '#0077cc' }}>{day.day}</strong>
-                        <ul style={{ paddingLeft: '1.2rem', marginTop: '0.3rem', color: '#333' }}>
-                          {day.meals.map((meal, idx) => (
-                            <li key={idx}>
-                              {meal.title} <em style={{ color: '#555', fontSize: '0.85rem' }}>({meal.readyInMinutes} min)</em>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
+                  <td className="plan-cell">
+                    <div className="plan-container nutrition-plan">
+                      {p.nutritionPlan.slice(0, 2).map(day => (
+                        <div key={day.day} className="day-plan">
+                          <div className="day-title">{day.day}</div>
+                          <ul className="plan-list">
+                            {day.meals.slice(0, 2).map((meal, idx) => (
+                              <li key={idx}>
+                                <div className="meal-info">
+                                  <span className="meal-name">{meal.title}</span>
+                                  <span className="meal-time">{meal.readyInMinutes} min</span>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                      <button 
+                        onClick={() => openPlanDetails(p)}
+                        className="btn btn-primary"
+                        style={{ marginTop: '10px' }}
+                      >
+                        View Full Plan
+                      </button>
+                    </div>
                   </td>
 
-                  {/* Fitness Plan */}
-                  <td
-                    style={{
-                      maxHeight: '360px',
-                      overflowY: 'auto',
-                      padding: '12px',
-                      backgroundColor: '#fff8e1',
-                      borderRadius: '8px',
-                      lineHeight: '1.4',
-                    }}
-                  >
-                    {p.fitnessPlan.map(day => (
-                      <div key={day.day} style={{ marginBottom: '1.2rem' }}>
-                        <strong style={{ fontSize: '1.05rem', color: '#28a745' }}>{day.day}</strong>
-                        <ul style={{ paddingLeft: '1.2rem', marginTop: '0.3rem', color: '#333' }}>
-                          {day.exercises.map((ex, idx) => (
-                            <li key={idx}>
-                              <strong>{ex.name}</strong>: {ex.description.length > 120
-                                ? ex.description.substring(0, 120) + '...'
-                                : ex.description}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
+                  <td className="plan-cell">
+                    <div className="plan-container fitness-plan">
+                      {p.fitnessPlan.slice(0, 2).map(day => (
+                        <div key={day.day} className="day-plan">
+                          <div className="day-title">{day.day}</div>
+                          <ul className="plan-list">
+                            {day.exercises.slice(0, 2).map((ex, idx) => (
+                              <li key={idx}>
+                                <div className="exercise-info">
+                                  <div className="exercise-name">{ex.name}</div>
+                                  <div className="exercise-desc">
+                                    {ex.description.substring(0, 80)}...
+                                  </div>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                      <button 
+                        onClick={() => openPlanDetails(p)}
+                        className="btn btn-primary"
+                        style={{ marginTop: '10px' }}
+                      >
+                        View Full Plan
+                      </button>
+                    </div>
                   </td>
 
-                  <td style={{ textAlign: 'center', fontWeight: '600' }}>
-                    {new Date(p.generatedAt).toLocaleString()}
+                  <td className="plan-cell">
+                    <div className="generated-time">
+                      {new Date(p.generatedAt).toLocaleDateString()}
+                      <br />
+                      {new Date(p.generatedAt).toLocaleTimeString()}
+                    </div>
                   </td>
 
-                  <td style={{ textAlign: 'center', paddingRight: '1.5rem' }}>
+                  <td className="plan-cell">
                     <button
                       onClick={() => deletePlan(p._id)}
-                      style={{
-                        padding: '7px 15px',
-                        backgroundColor: '#e74c3c',
-                        border: 'none',
-                        borderRadius: '8px',
-                        color: 'white',
-                        cursor: 'pointer',
-                        fontWeight: '600',
-                        transition: 'background-color 0.2s',
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#c0392b'}
-                      onMouseLeave={e => e.currentTarget.style.backgroundColor = '#e74c3c'}
+                      className="btn btn-danger btn-lg"
                     >
-                      Delete Plan
+                      Delete
                     </button>
                   </td>
                 </tr>
@@ -441,237 +402,221 @@ export default function AdminDashboard() {
         )}
       </section>
 
-      {/* Edit User Modal */}
-      {editingUser && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.55)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 2000,
-            padding: '1rem',
-          }}
-        >
-          <div
-            style={{
-              background: 'white',
-              padding: '2rem 2.5rem',
-              borderRadius: '15px',
-              width: '450px',
-              maxWidth: '95vw',
-              boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
-              fontSize: '1rem',
-            }}
+{editingUser && (
+  <div className="modal-overlay">
+    <div className="modal-content">
+      <h2 className="modal-header">Edit User</h2>
+      <form onSubmit={submitUserUpdate}>
+        <div className="modal-body">
+          <label className="form-label">
+            Name:
+            <input
+              type="text"
+              name="name"
+              value={editFormData.name}
+              onChange={handleEditChange}
+              required
+              className="form-input"
+            />
+          </label>
+
+          <label className="form-label">
+            Age (years):
+            <input
+              type="number"
+              name="age"
+              value={editFormData.age}
+              onChange={handleEditChange}
+              required
+              className="form-input"
+            />
+          </label>
+
+          <label className="form-label">
+            Weight (kg):
+            <input
+              type="number"
+              step="0.1"
+              name="weight"
+              value={editFormData.weight}
+              onChange={handleEditChange}
+              required
+              className="form-input"
+            />
+          </label>
+
+          <label className="form-label">
+            Height (cm):
+            <input
+              type="number"
+              name="height"
+              value={editFormData.height}
+              onChange={handleEditChange}
+              required
+              className="form-input"
+            />
+          </label>
+
+          <label className="form-label">
+            Ethnicity:
+            <select
+              name="ethnicity"
+              value={editFormData.ethnicity}
+              onChange={handleEditChange}
+              required
+              className="form-select"
+            >
+              {Object.entries(ethnicityMap).map(([key, val]) => (
+                <option key={key} value={key}>{val}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="form-label">
+            Activity Level:
+            <select
+              name="activityLevel"
+              value={editFormData.activityLevel}
+              onChange={handleEditChange}
+              required
+              className="form-select"
+            >
+              {Object.entries(activityLevelMap).map(([key, val]) => (
+                <option key={key} value={key}>{val}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="form-label">
+            Income Ratio:
+            <select
+              name="income"
+              value={editFormData.income}
+              onChange={handleEditChange}
+              required
+              className="form-select"
+            >
+              {Object.entries(incomeMap).map(([key, val]) => (
+                <option key={key} value={key}>{val}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="form-label">
+            BMI Result:
+            <input
+              type="number"
+              step="0.1"
+              name="bmi"
+              value={editFormData.bmi}
+              onChange={handleEditChange}
+              required
+              className="form-input"
+            />
+          </label>
+        </div>
+
+        <div className="form-actions">
+          <button
+            type="button"
+            onClick={closeEditModal}
+            className="btn btn-secondary btn-lg"
           >
-            <h2 style={{ marginBottom: '1rem', color: '#0077cc', fontWeight: '700' }}>Edit User</h2>
-            <form onSubmit={submitUserUpdate}>
-              <label style={{ display: 'block', marginBottom: '0.6rem', fontWeight: '600' }}>
-                Name:
-                <input
-                  type="text"
-                  name="name"
-                  value={editFormData.name}
-                  onChange={handleEditChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '8px',
-                    marginTop: '4px',
-                    borderRadius: '6px',
-                    border: '1px solid #ccc',
-                    fontSize: '1rem',
-                  }}
-                />
-              </label>
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="btn btn-primary btn-lg"
+          >
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
 
-              <label style={{ display: 'block', marginBottom: '0.6rem', fontWeight: '600' }}>
-                Age (years):
-                <input
-                  type="number"
-                  name="age"
-                  value={editFormData.age}
-                  onChange={handleEditChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '8px',
-                    marginTop: '4px',
-                    borderRadius: '6px',
-                    border: '1px solid #ccc',
-                    fontSize: '1rem',
-                  }}
-                />
-              </label>
+      {showConfirmDialog && (
+        <div className="modal-overlay">
+          <div className="confirmation-dialog">
+            <h3 className="dialog-title">{dialogConfig.title}</h3>
+            <p className="dialog-message">{dialogConfig.message}</p>
+            <div className="dialog-actions">
+              <button
+                onClick={dialogConfig.onCancel}
+                className="btn btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={dialogConfig.onConfirm}
+                className="btn btn-danger"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-              <label style={{ display: 'block', marginBottom: '0.6rem', fontWeight: '600' }}>
-                Weight (kg):
-                <input
-                  type="number"
-                  step="0.1"
-                  name="weight"
-                  value={editFormData.weight}
-                  onChange={handleEditChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '8px',
-                    marginTop: '4px',
-                    borderRadius: '6px',
-                    border: '1px solid #ccc',
-                    fontSize: '1rem',
-                  }}
-                />
-              </label>
-
-              <label style={{ display: 'block', marginBottom: '0.6rem', fontWeight: '600' }}>
-                Height (cm):
-                <input
-                  type="number"
-                  name="height"
-                  value={editFormData.height}
-                  onChange={handleEditChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '8px',
-                    marginTop: '4px',
-                    borderRadius: '6px',
-                    border: '1px solid #ccc',
-                    fontSize: '1rem',
-                  }}
-                />
-              </label>
-
-              <label style={{ display: 'block', marginBottom: '0.6rem', fontWeight: '600' }}>
-                Ethnicity:
-                <select
-                  name="ethnicity"
-                  value={editFormData.ethnicity}
-                  onChange={handleEditChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '8px',
-                    marginTop: '4px',
-                    borderRadius: '6px',
-                    border: '1px solid #ccc',
-                    fontSize: '1rem',
-                    backgroundColor: 'white',
-                  }}
-                >
-                  {Object.entries(ethnicityMap).map(([key, val]) => (
-                    <option key={key} value={key}>{val}</option>
+      {showPlanDetails && selectedPlan && (
+        <div className="modal-overlay">
+          <div className="plan-details-modal">
+            <div className="plan-details-header">
+              <h2 className="plan-details-title">
+                Plan for {selectedPlan.userId?.name || "User"}
+              </h2>
+              <button 
+                onClick={closePlanDetails}
+                className="plan-details-close"
+              >
+                &times;
+              </button>
+            </div>
+            
+            <div className="plan-details-content">
+              <div className="plan-details-column">
+                <div className="plan-details-section">
+                  <h3 className="plan-details-section-title">Nutrition Plan</h3>
+                  {selectedPlan.nutritionPlan.map(day => (
+                    <div key={day.day} className="plan-details-day">
+                      <h4 className="plan-details-day-title">{day.day}</h4>
+                      <ul className="plan-list">
+                        {day.meals.map((meal, idx) => (
+                          <li key={idx}>
+                            <div className="meal-info">
+                              <span className="meal-name">{meal.title}</span>
+                              <span className="meal-time">{meal.readyInMinutes} min</span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   ))}
-                </select>
-              </label>
-
-              <label style={{ display: 'block', marginBottom: '0.6rem', fontWeight: '600' }}>
-                Activity Level:
-                <select
-                  name="activityLevel"
-                  value={editFormData.activityLevel}
-                  onChange={handleEditChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '8px',
-                    marginTop: '4px',
-                    borderRadius: '6px',
-                    border: '1px solid #ccc',
-                    fontSize: '1rem',
-                    backgroundColor: 'white',
-                  }}
-                >
-                  {Object.entries(activityLevelMap).map(([key, val]) => (
-                    <option key={key} value={key}>{val}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label style={{ display: 'block', marginBottom: '0.6rem', fontWeight: '600' }}>
-                Income Ratio:
-                <select
-                  name="income"
-                  value={editFormData.income}
-                  onChange={handleEditChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '8px',
-                    marginTop: '4px',
-                    borderRadius: '6px',
-                    border: '1px solid #ccc',
-                    fontSize: '1rem',
-                    backgroundColor: 'white',
-                  }}
-                >
-                  {Object.entries(incomeMap).map(([key, val]) => (
-                    <option key={key} value={key}>{val}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label style={{ display: 'block', marginBottom: '1.2rem', fontWeight: '600' }}>
-                BMI Result:
-                <input
-                  type="number"
-                  step="0.1"
-                  name="bmi"
-                  value={editFormData.bmi}
-                  onChange={handleEditChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '8px',
-                    marginTop: '4px',
-                    borderRadius: '6px',
-                    border: '1px solid #ccc',
-                    fontSize: '1rem',
-                  }}
-                />
-              </label>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                <button
-                  type="submit"
-                  style={{
-                    padding: '10px 22px',
-                    backgroundColor: '#0077cc',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontWeight: '700',
-                    cursor: 'pointer',
-                    transition: 'background-color 0.3s',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#005fa3'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = '#0077cc'}
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  onClick={closeEditModal}
-                  style={{
-                    padding: '10px 22px',
-                    backgroundColor: '#ccc',
-                    color: '#444',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'background-color 0.3s',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#999'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = '#ccc'}
-                >
-                  Cancel
-                </button>
+                </div>
               </div>
-            </form>
+              
+              <div className="plan-details-column">
+                <div className="plan-details-section">
+                  <h3 className="plan-details-section-title">Fitness Plan</h3>
+                  {selectedPlan.fitnessPlan.map(day => (
+                    <div key={day.day} className="plan-details-day">
+                      <h4 className="plan-details-day-title">{day.day}</h4>
+                      <ul className="plan-list">
+                        {day.exercises.map((ex, idx) => (
+                          <li key={idx}>
+                            <div className="exercise-info">
+                              <div className="exercise-name">{ex.name}</div>
+                              <div className="exercise-desc">{ex.description}</div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
