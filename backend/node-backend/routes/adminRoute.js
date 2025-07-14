@@ -7,6 +7,7 @@ router.post('/user', adminController.addUser);
 router.put('/user/:id', adminController.updateUser);
 router.delete('/user/:id', adminController.deleteUser);
 
+router.post('/plans', adminController.storePlans);
 router.get('/plans', adminController.getAllPlans);
 router.delete('/plan/:id', adminController.deletePlan);
 

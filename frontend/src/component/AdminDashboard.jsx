@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import '../styles/AdminDashboard.css';
 
 const ethnicityMap = {
   1: "Mexican American",
@@ -32,7 +33,6 @@ export default function AdminDashboard() {
   const [loadingPlans, setLoadingPlans] = useState(false);
   const [error, setError] = useState(null);
   const [stats, setStats] = useState(null);
-
   const [editingUser, setEditingUser] = useState(null);
   const [editFormData, setEditFormData] = useState({
     name: '',
@@ -44,10 +44,18 @@ export default function AdminDashboard() {
     income: '',
     ethnicity: ''
   });
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState({
+    title: '',
+    message: '',
+    onConfirm: null,
+    onCancel: null
+  });
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [showPlanDetails, setShowPlanDetails] = useState(false);
 
   const API_BASE = "http://localhost:8000/admin";
 
-  // Fetch users
   const fetchUsers = async () => {
     setLoadingUsers(true);
     try {
@@ -60,7 +68,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Fetch plans
   const fetchPlans = async () => {
     setLoadingPlans(true);
     try {
@@ -73,7 +80,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Fetch stats
   const fetchStats = async () => {
     try {
       const res = await axios.get(`${API_BASE}/stats`);
@@ -89,30 +95,58 @@ export default function AdminDashboard() {
     fetchStats();
   }, []);
 
-  // Delete user
+  const showConfirmation = (title, message, onConfirm, onCancel = () => setShowConfirmDialog(false)) => {
+    setDialogConfig({
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setShowConfirmDialog(false);
+      },
+      onCancel
+    });
+    setShowConfirmDialog(true);
+  };
+
   const deleteUser = async (id) => {
-    if (!window.confirm("Delete this user and their plans?")) return;
-    try {
-      await axios.delete(`${API_BASE}/user/${id}`);
-      fetchUsers();
-      fetchPlans();
-    } catch {
-      alert("Failed to delete user");
-    }
+    showConfirmation(
+      "Delete User",
+      "Are you sure you want to delete this user and all their plans?",
+      async () => {
+        try {
+          await axios.delete(`${API_BASE}/user/${id}`);
+          fetchUsers();
+          fetchPlans();
+        } catch {
+          showConfirmation(
+            "Error",
+            "Failed to delete user. Please try again.",
+            () => {}
+          );
+        }
+      }
+    );
   };
 
-  // Delete plan
   const deletePlan = async (id) => {
-    if (!window.confirm("Delete this plan?")) return;
-    try {
-      await axios.delete(`${API_BASE}/plan/${id}`);
-      fetchPlans();
-    } catch {
-      alert("Failed to delete plan");
-    }
+    showConfirmation(
+      "Delete Plan",
+      "Are you sure you want to delete this plan?",
+      async () => {
+        try {
+          await axios.delete(`${API_BASE}/plan/${id}`);
+          fetchPlans();
+        } catch {
+          showConfirmation(
+            "Error",
+            "Failed to delete plan. Please try again.",
+            () => {}
+          );
+        }
+      }
+    );
   };
 
-  // Open edit modal with user data
   const openEditModal = (user) => {
     setEditingUser(user._id);
     setEditFormData({
@@ -121,13 +155,12 @@ export default function AdminDashboard() {
       weight: user.weight || '',
       height: user.height || '',
       bmi: user.bmi || '',
-      activityLevel: user.lifestyle || '',  // backend stores as lifestyle
+      activityLevel: user.lifestyle || '',
       income: user.income || '',
       ethnicity: user.ethnicity || ''
     });
   };
 
-  // Close edit modal
   const closeEditModal = () => {
     setEditingUser(null);
     setEditFormData({
@@ -142,13 +175,11 @@ export default function AdminDashboard() {
     });
   };
 
-  // Handle edit form changes
   const handleEditChange = (e) => {
     const { name, value } = e.target;
     setEditFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Submit updated user
   const submitUserUpdate = async (e) => {
     e.preventDefault();
     try {
@@ -158,65 +189,103 @@ export default function AdminDashboard() {
         weight: Number(editFormData.weight),
         height: Number(editFormData.height),
         bmi: Number(editFormData.bmi),
-        lifestyle: Number(editFormData.activityLevel),  // map back to lifestyle field
+        lifestyle: Number(editFormData.activityLevel),
         income: Number(editFormData.income),
         ethnicity: Number(editFormData.ethnicity),
       });
       closeEditModal();
       fetchUsers();
     } catch {
-      alert("Failed to update user");
+      showConfirmation(
+        "Error",
+        "Failed to update user. Please try again.",
+        () => {}
+      );
     }
   };
 
+  const openPlanDetails = (plan) => {
+    setSelectedPlan(plan);
+    setShowPlanDetails(true);
+  };
+
+  const closePlanDetails = () => {
+    setSelectedPlan(null);
+    setShowPlanDetails(false);
+  };
+
   return (
-    <div style={{ padding: '1rem', maxWidth: '1100px', margin: 'auto' }}>
-      <h1>Admin Dashboard</h1>
+    <div className="admin-dashboard">
+      <h1 className="admin-header">Admin Dashboard</h1>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <p className="error-message">{error}</p>}
 
-      <section style={{ marginBottom: '2rem' }}>
-        <h2>Stats</h2>
+      <section className="stats-container">
         {stats ? (
-          <div>
-            <p><strong>Total Users:</strong> {stats.totalUsers}</p>
-            <p><strong>Average BMI:</strong> {stats.averageBMI.toFixed(2)}</p>
-          </div>
-        ) : <p>Loading stats...</p>}
+          <>
+            <div className="stat-item">
+              Total Users<br />
+              <span className="stat-value">{stats.totalUsers}</span>
+            </div>
+            <div className="stat-item">
+              Average BMI<br />
+              <span className="stat-value green">{stats.averageBMI.toFixed(2)}</span>
+            </div>
+          </>
+        ) : (
+          <p>Loading stats...</p>
+        )}
       </section>
 
-      <section style={{ marginBottom: '2rem' }}>
-        <h2>Users</h2>
-        {loadingUsers ? <p>Loading users...</p> : (
-          <table border="1" cellPadding="5" style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <section>
+        <h2 className="section-header blue">Users</h2>
+        {loadingUsers ? (
+          <p>Loading users...</p>
+        ) : (
+          <table className="users-table">
             <thead>
-              <tr>
+              <tr className="table-header">
                 <th>Name</th>
-                <th>Age (years)</th>
+                <th>Age</th>
                 <th>Weight (kg)</th>
                 <th>Height (cm)</th>
                 <th>Ethnicity</th>
                 <th>Activity Level</th>
                 <th>Income Ratio</th>
-                <th>BMI Result</th>
+                <th>BMI</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {users.length === 0 && <tr><td colSpan="9">No users found.</td></tr>}
-              {users.map(u => (
-                <tr key={u._id}>
-                  <td>{u.name}</td>
-                  <td>{u.age}</td>
-                  <td>{u.weight}</td>
-                  <td>{u.height}</td>
-                  <td>{ethnicityMap[u.ethnicity]}</td>
-                  <td>{activityLevelMap[u.lifestyle]}</td>
-                  <td>{incomeMap[u.income]}</td>
-                  <td>{u.bmi}</td>
-                  <td>
-                    <button onClick={() => openEditModal(u)}>Edit</button>{' '}
-                    <button onClick={() => deleteUser(u._id)}>Delete</button>
+              {users.length === 0 && (
+                <tr>
+                  <td colSpan="9" className="empty-state">No users found.</td>
+                </tr>
+              )}
+              {users.map((u, i) => (
+                <tr key={u._id} className="table-row">
+                  <td className="table-cell-left">{u.name}</td>
+                  <td className="table-cell">{u.age}</td>
+                  <td className="table-cell">{u.weight}</td>
+                  <td className="table-cell">{u.height}</td>
+                  <td className="table-cell">{ethnicityMap[u.ethnicity]}</td>
+                  <td className="table-cell">{activityLevelMap[u.lifestyle]}</td>
+                  <td className="table-cell">{incomeMap[u.income]}</td>
+                  <td className="table-cell">{u.bmi}</td>
+                  <td className="table-cell">
+                    <button
+                      onClick={() => openEditModal(u)}
+                      className="btn btn-primary"
+                      style={{ marginRight: '0.7rem' }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => deleteUser(u._id)}
+                      className="btn btn-danger"
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -226,36 +295,105 @@ export default function AdminDashboard() {
       </section>
 
       <section>
-        <h2>Plans</h2>
-        {loadingPlans ? <p>Loading plans...</p> : (
-          <table border="1" cellPadding="5" style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <h2 className="section-header blue">Nutrition & Fitness Plans</h2>
+        {loadingPlans ? (
+          <p>Loading plans...</p>
+        ) : (
+          <table className="plans-table">
             <thead>
-              <tr>
-                <th>User Name</th>
+              <tr className="plans-header">
+                <th>User</th>
                 <th>Nutrition Plan</th>
                 <th>Fitness Plan</th>
-                <th>Generated At</th>
+                <th>Generated</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {plans.length === 0 && <tr><td colSpan="5">No plans found.</td></tr>}
-              {plans.map(p => (
-                <tr key={p._id}>
-                  <td>{p.userId?.name || "N/A"}</td>
-                  <td>
-                    <pre style={{ maxHeight: '150px', overflow: 'auto', whiteSpace: 'pre-wrap' }}>
-                      {JSON.stringify(p.nutritionPlan, null, 2)}
-                    </pre>
+              {plans.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="empty-state">No plans found.</td>
+                </tr>
+              )}
+              {plans.map((p) => (
+                <tr key={p._id} className="plan-row">
+                  <td className="plan-cell-left">
+                    <div className="plan-user-name">
+                      {p.userId?.name || "N/A"}
+                    </div>
                   </td>
-                  <td>
-                    <pre style={{ maxHeight: '150px', overflow: 'auto', whiteSpace: 'pre-wrap' }}>
-                      {JSON.stringify(p.fitnessPlan, null, 2)}
-                    </pre>
+
+                  <td className="plan-cell">
+                    <div className="plan-container nutrition-plan">
+                      {p.nutritionPlan.slice(0, 2).map(day => (
+                        <div key={day.day} className="day-plan">
+                          <div className="day-title">{day.day}</div>
+                          <ul className="plan-list">
+                            {day.meals.slice(0, 2).map((meal, idx) => (
+                              <li key={idx}>
+                                <div className="meal-info">
+                                  <span className="meal-name">{meal.title}</span>
+                                  <span className="meal-time">{meal.readyInMinutes} min</span>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                      <button 
+                        onClick={() => openPlanDetails(p)}
+                        className="btn btn-primary"
+                        style={{ marginTop: '10px' }}
+                      >
+                        View Full Plan
+                      </button>
+                    </div>
                   </td>
-                  <td>{new Date(p.generatedAt).toLocaleString()}</td>
-                  <td>
-                    <button onClick={() => deletePlan(p._id)}>Delete Plan</button>
+
+                  <td className="plan-cell">
+                    <div className="plan-container fitness-plan">
+                      {p.fitnessPlan.slice(0, 2).map(day => (
+                        <div key={day.day} className="day-plan">
+                          <div className="day-title">{day.day}</div>
+                          <ul className="plan-list">
+                            {day.exercises.slice(0, 2).map((ex, idx) => (
+                              <li key={idx}>
+                                <div className="exercise-info">
+                                  <div className="exercise-name">{ex.name}</div>
+                                  <div className="exercise-desc">
+                                    {ex.description.substring(0, 80)}...
+                                  </div>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                      <button 
+                        onClick={() => openPlanDetails(p)}
+                        className="btn btn-primary"
+                        style={{ marginTop: '10px' }}
+                      >
+                        View Full Plan
+                      </button>
+                    </div>
+                  </td>
+
+                  <td className="plan-cell">
+                    <div className="generated-time">
+                      {new Date(p.generatedAt).toLocaleDateString()}
+                      <br />
+                      {new Date(p.generatedAt).toLocaleTimeString()}
+                    </div>
+                  </td>
+
+                  <td className="plan-cell">
+                    <button
+                      onClick={() => deletePlan(p._id)}
+                      className="btn btn-danger btn-lg"
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -264,63 +402,221 @@ export default function AdminDashboard() {
         )}
       </section>
 
-      {/* Edit User Modal */}
-      {editingUser && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{ background: 'white', padding: '1rem', borderRadius: '5px', width: '400px' }}>
-            <h2>Edit User</h2>
-            <form onSubmit={submitUserUpdate}>
-              <label>Name:<br />
-                <input type="text" name="name" value={editFormData.name} onChange={handleEditChange} required />
-              </label>
-              <br />
-              <label>Age (years):<br />
-                <input type="number" name="age" value={editFormData.age} onChange={handleEditChange} required />
-              </label>
-              <br />
-              <label>Weight (kg):<br />
-                <input type="number" step="0.1" name="weight" value={editFormData.weight} onChange={handleEditChange} required />
-              </label>
-              <br />
-              <label>Height (cm):<br />
-                <input type="number" name="height" value={editFormData.height} onChange={handleEditChange} required />
-              </label>
-              <br />
-              <label>Ethnicity:<br />
-                <select name="ethnicity" value={editFormData.ethnicity} onChange={handleEditChange} required>
-                  {Object.entries(ethnicityMap).map(([key, val]) => (
-                    <option key={key} value={key}>{val}</option>
+{editingUser && (
+  <div className="modal-overlay">
+    <div className="modal-content">
+      <h2 className="modal-header">Edit User</h2>
+      <form onSubmit={submitUserUpdate}>
+        <div className="modal-body">
+          <label className="form-label">
+            Name:
+            <input
+              type="text"
+              name="name"
+              value={editFormData.name}
+              onChange={handleEditChange}
+              required
+              className="form-input"
+            />
+          </label>
+
+          <label className="form-label">
+            Age (years):
+            <input
+              type="number"
+              name="age"
+              value={editFormData.age}
+              onChange={handleEditChange}
+              required
+              className="form-input"
+            />
+          </label>
+
+          <label className="form-label">
+            Weight (kg):
+            <input
+              type="number"
+              step="0.1"
+              name="weight"
+              value={editFormData.weight}
+              onChange={handleEditChange}
+              required
+              className="form-input"
+            />
+          </label>
+
+          <label className="form-label">
+            Height (cm):
+            <input
+              type="number"
+              name="height"
+              value={editFormData.height}
+              onChange={handleEditChange}
+              required
+              className="form-input"
+            />
+          </label>
+
+          <label className="form-label">
+            Ethnicity:
+            <select
+              name="ethnicity"
+              value={editFormData.ethnicity}
+              onChange={handleEditChange}
+              required
+              className="form-select"
+            >
+              {Object.entries(ethnicityMap).map(([key, val]) => (
+                <option key={key} value={key}>{val}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="form-label">
+            Activity Level:
+            <select
+              name="activityLevel"
+              value={editFormData.activityLevel}
+              onChange={handleEditChange}
+              required
+              className="form-select"
+            >
+              {Object.entries(activityLevelMap).map(([key, val]) => (
+                <option key={key} value={key}>{val}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="form-label">
+            Income Ratio:
+            <select
+              name="income"
+              value={editFormData.income}
+              onChange={handleEditChange}
+              required
+              className="form-select"
+            >
+              {Object.entries(incomeMap).map(([key, val]) => (
+                <option key={key} value={key}>{val}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="form-label">
+            BMI Result:
+            <input
+              type="number"
+              step="0.1"
+              name="bmi"
+              value={editFormData.bmi}
+              onChange={handleEditChange}
+              required
+              className="form-input"
+            />
+          </label>
+        </div>
+
+        <div className="form-actions">
+          <button
+            type="button"
+            onClick={closeEditModal}
+            className="btn btn-secondary btn-lg"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="btn btn-primary btn-lg"
+          >
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
+
+      {showConfirmDialog && (
+        <div className="modal-overlay">
+          <div className="confirmation-dialog">
+            <h3 className="dialog-title">{dialogConfig.title}</h3>
+            <p className="dialog-message">{dialogConfig.message}</p>
+            <div className="dialog-actions">
+              <button
+                onClick={dialogConfig.onCancel}
+                className="btn btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={dialogConfig.onConfirm}
+                className="btn btn-danger"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPlanDetails && selectedPlan && (
+        <div className="modal-overlay">
+          <div className="plan-details-modal">
+            <div className="plan-details-header">
+              <h2 className="plan-details-title">
+                Plan for {selectedPlan.userId?.name || "User"}
+              </h2>
+              <button 
+                onClick={closePlanDetails}
+                className="plan-details-close"
+              >
+                &times;
+              </button>
+            </div>
+            
+            <div className="plan-details-content">
+              <div className="plan-details-column">
+                <div className="plan-details-section">
+                  <h3 className="plan-details-section-title">Nutrition Plan</h3>
+                  {selectedPlan.nutritionPlan.map(day => (
+                    <div key={day.day} className="plan-details-day">
+                      <h4 className="plan-details-day-title">{day.day}</h4>
+                      <ul className="plan-list">
+                        {day.meals.map((meal, idx) => (
+                          <li key={idx}>
+                            <div className="meal-info">
+                              <span className="meal-name">{meal.title}</span>
+                              <span className="meal-time">{meal.readyInMinutes} min</span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   ))}
-                </select>
-              </label>
-              <br />
-              <label>Activity Level:<br />
-                <select name="activityLevel" value={editFormData.activityLevel} onChange={handleEditChange} required>
-                  {Object.entries(activityLevelMap).map(([key, val]) => (
-                    <option key={key} value={key}>{val}</option>
+                </div>
+              </div>
+              
+              <div className="plan-details-column">
+                <div className="plan-details-section">
+                  <h3 className="plan-details-section-title">Fitness Plan</h3>
+                  {selectedPlan.fitnessPlan.map(day => (
+                    <div key={day.day} className="plan-details-day">
+                      <h4 className="plan-details-day-title">{day.day}</h4>
+                      <ul className="plan-list">
+                        {day.exercises.map((ex, idx) => (
+                          <li key={idx}>
+                            <div className="exercise-info">
+                              <div className="exercise-name">{ex.name}</div>
+                              <div className="exercise-desc">{ex.description}</div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   ))}
-                </select>
-              </label>
-              <br />
-              <label>Income Ratio:<br />
-                <select name="income" value={editFormData.income} onChange={handleEditChange} required>
-                  {Object.entries(incomeMap).map(([key, val]) => (
-                    <option key={key} value={key}>{val}</option>
-                  ))}
-                </select>
-              </label>
-              <br />
-              <label>BMI Result:<br />
-                <input type="number" step="0.1" name="bmi" value={editFormData.bmi} onChange={handleEditChange} required />
-              </label>
-              <br /><br />
-              <button type="submit">Save</button>{' '}
-              <button type="button" onClick={closeEditModal}>Cancel</button>
-            </form>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
