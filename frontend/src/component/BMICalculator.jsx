@@ -102,7 +102,8 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { 
   FaWeight, FaRulerVertical, FaUser, FaBirthdayCake, 
-  FaRunning, FaMoneyBillWave, FaUtensils, FaDumbbell 
+  FaRunning, FaMoneyBillWave, FaUtensils, FaDumbbell,
+  FaTimes
 } from "react-icons/fa";
 import { GiMeal } from "react-icons/gi";
 import { MdFitnessCenter } from "react-icons/md";
@@ -155,6 +156,7 @@ export default function BMICalculator() {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   const [aiRecommendation, setAiRecommendation] = useState("");
 =======
   const [aiRecommendation, setAiRecommendation] = useState(""); // Holds combined nutrition+fitness plan text
@@ -167,6 +169,16 @@ export default function BMICalculator() {
   const [fitnessPlan, setFitnessPlan] = useState(null);
   const [activeTab, setActiveTab] = useState("nutrition");
 >>>>>>> origin/Dipika
+=======
+  const [nutritionPlan, setNutritionPlan] = useState([]);
+  const [fitnessPlan, setFitnessPlan] = useState([]);
+  const [nutritionLoading, setNutritionLoading] = useState(false);
+  const [fitnessLoading, setFitnessLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("nutrition");
+  const [error, setError] = useState(null);
+  const [showNutritionDialog, setShowNutritionDialog] = useState(false);
+  const [showFitnessDialog, setShowFitnessDialog] = useState(false);
+>>>>>>> origin/Dipika
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -177,6 +189,7 @@ export default function BMICalculator() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     try {
       // Calculate BMI
       const response = await axios.post("http://localhost:5000/predict", {
@@ -212,7 +225,7 @@ export default function BMICalculator() {
       });
       setUserId(res.data._id);
     } catch (error) {
-      alert("Error calculating BMI or saving user data");
+      setError("Error calculating BMI or saving user data");
       console.error(error);
     } finally {
       setLoading(false);
@@ -249,6 +262,9 @@ export default function BMICalculator() {
             (o) => o.value === Number(formData.lifestyle)
           )?.label;
 
+          setNutritionLoading(true);
+          setFitnessLoading(true);
+
           // Get nutrition plan
           const nutritionRes = await axios.post(
             "http://localhost:5000/generate-plan",
@@ -280,7 +296,13 @@ export default function BMICalculator() {
             nutritionPlan: nutritionRes.data.plan,
           });
         } catch (error) {
+          setError("Error generating plans");
           console.error("Plan generation error:", error);
+          setNutritionPlan([]);
+          setFitnessPlan([]);
+        } finally {
+          setNutritionLoading(false);
+          setFitnessLoading(false);
         }
       };
 
@@ -327,10 +349,122 @@ export default function BMICalculator() {
 >>>>>>> origin/Dipika
   };
 
+const NutritionPlanDialog = () => (
+  <div className="plan-dialog-overlay">
+    <div className="plan-dialog">
+      <div className="dialog-header">
+        <h3><FaUtensils /> Weekly Nutrition Plan</h3>
+        <button onClick={() => setShowNutritionDialog(false)} className="close-btn">
+          <FaTimes />
+        </button>
+      </div>
+      <div className="dialog-content">
+        {nutritionPlan.length > 0 ? (
+          <div className="weekly-plan">
+            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day, dayIndex) => {
+              const dayMeals = nutritionPlan.filter(meal => meal.day === day);
+              return (
+                <div key={day} className="day-plan">
+                  <h4 className="day-header">{day}</h4>
+                  {dayMeals.length > 0 ? (
+                    dayMeals.map((meal, mealIndex) => (
+                      <div key={`${day}-${mealIndex}`} className="meal-item">
+                        <h5 className="meal-title">{meal.title}</h5>
+                        {meal.readyInMinutes && (
+                          <p className="meal-time">⏱️ {meal.readyInMinutes} min</p>
+                        )}
+                        {meal.ingredients && (
+                          <div className="meal-details">
+                            <h6>Ingredients:</h6>
+                            <ul>
+                              {meal.ingredients.map((ing, i) => (
+                                <li key={i}>{ing}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {meal.sourceUrl && (
+                          <a href={meal.sourceUrl} target="_blank" rel="noopener noreferrer" className="plan-link">
+                            View Recipe
+                          </a>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="no-meals">No meals planned for this day</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p>No nutrition plan available</p>
+        )}
+      </div>
+    </div>
+  </div>
+);
+
+const FitnessPlanDialog = () => (
+  <div className="plan-dialog-overlay">
+    <div className="plan-dialog">
+      <div className="dialog-header">
+        <h3><FaDumbbell /> Weekly Fitness Plan</h3>
+        <button onClick={() => setShowFitnessDialog(false)} className="close-btn">
+          <FaTimes />
+        </button>
+      </div>
+      <div className="dialog-content">
+        {fitnessPlan.length > 0 ? (
+          <div className="weekly-plan">
+            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => {
+              const dayExercises = fitnessPlan.filter(ex => ex.day === day);
+              return (
+                <div key={day} className="day-plan">
+                  <h4 className="day-header">{day}</h4>
+                  {dayExercises.length > 0 ? (
+                    dayExercises.map((exercise, exIndex) => (
+                      <div key={`${day}-${exIndex}`} className="exercise-item">
+                        <h5 className="exercise-title">{exercise.name}</h5>
+                        {exercise.description && (
+                          <div 
+                            className="exercise-description" 
+                            dangerouslySetInnerHTML={{ __html: exercise.description }} 
+                          />
+                        )}
+                        {exercise.setsReps && (
+                          <p className="sets-reps"><strong>Sets/Reps:</strong> {exercise.setsReps}</p>
+                        )}
+                        {exercise.videoUrl && (
+                          <a href={exercise.videoUrl} target="_blank" rel="noopener noreferrer" className="plan-link">
+                            Watch Demonstration
+                          </a>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="no-exercises">Rest day</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p>No fitness plan available</p>
+        )}
+      </div>
+    </div>
+  </div>
+);
+
   return (
     <div className="calculator-container">
+      {showNutritionDialog && <NutritionPlanDialog />}
+      {showFitnessDialog && <FitnessPlanDialog />}
+      
       <div className="form-section">
         <h2 className="calculator-title">BMI Calculator</h2>
+        {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label><FaUser className="input-icon" /> Name</label>
@@ -511,52 +645,84 @@ export default function BMICalculator() {
               </div>
               
               <div className="tab-content">
-                {activeTab === 'nutrition' && nutritionPlan && (
+                {activeTab === 'nutrition' && (
                   <div className="nutrition-plan">
-                    <h4><FaUtensils /> Your Personalized Nutrition Plan</h4>
-                    <div className="meals-grid">
-                      {nutritionPlan.map((meal, index) => (
-                        <div key={index} className="meal-card">
-                          <h5>{meal.title}</h5>
-                          <p>⏱️ Ready in {meal.readyInMinutes} minutes</p>
-                          <p>🍽️ Servings: {meal.servings || 'N/A'}</p>
-                          {meal.sourceUrl && (
-                            <a 
-                              href={meal.sourceUrl} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="plan-link"
-                            >
-                              View Recipe
-                            </a>
-                          )}
-                        </div>
-                      ))}
+                    <div className="plan-header">
+                      <h4><FaUtensils /> Your Personalized Nutrition Plan</h4>
+                      {nutritionPlan.length > 0 && (
+                        <button 
+                          onClick={() => setShowNutritionDialog(true)}
+                          className="view-full-plan-btn"
+                        >
+                          View Full Plan
+                        </button>
+                      )}
                     </div>
+                    {nutritionLoading ? (
+                      <div className="loading-spinner"></div>
+                    ) : nutritionPlan.length > 0 ? (
+                      <div className="meals-grid">
+                        {nutritionPlan.slice(0, 3).map((meal, index) => (
+                          <div key={index} className="meal-card">
+                            <h5>{meal.title || `Meal ${index + 1}`}</h5>
+                            <p>⏱️ Ready in {meal.readyInMinutes || 'N/A'} minutes</p>
+                            <p>🍽️ Servings: {meal.servings || 'N/A'}</p>
+                            {meal.sourceUrl && (
+                              <a 
+                                href={meal.sourceUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="plan-link"
+                              >
+                                View Recipe
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="no-plan-message">No nutrition plan available</p>
+                    )}
                   </div>
                 )}
                 
-                {activeTab === 'fitness' && fitnessPlan && (
+                {activeTab === 'fitness' && (
                   <div className="fitness-plan">
-                    <h4><FaDumbbell /> Your Personalized Fitness Plan</h4>
-                    <div className="exercises-list">
-                      {fitnessPlan.map((exercise, index) => (
-                        <div key={index} className="exercise-card">
-                          <h5>{exercise.name}</h5>
-                          <p>{exercise.description?.replace(/<[^>]*>/g, "")}</p>
-                          {exercise.videoUrl && (
-                            <a 
-                              href={exercise.videoUrl} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="plan-link"
-                            >
-                              Watch Demonstration
-                            </a>
-                          )}
-                        </div>
-                      ))}
+                    <div className="plan-header">
+                      <h4><FaDumbbell /> Your Personalized Fitness Plan</h4>
+                      {fitnessPlan.length > 0 && (
+                        <button 
+                          onClick={() => setShowFitnessDialog(true)}
+                          className="view-full-plan-btn"
+                        >
+                          View Full Plan
+                        </button>
+                      )}
                     </div>
+                    {fitnessLoading ? (
+                      <div className="loading-spinner"></div>
+                    ) : fitnessPlan.length > 0 ? (
+                      <div className="exercises-list">
+                        {fitnessPlan.slice(0, 3).map((exercise, index) => (
+                          <div key={index} className="exercise-card">
+                            <h5>{exercise.name || `Exercise ${index + 1}`}</h5>
+                            <p>{exercise.description?.replace(/<[^>]*>/g, "") || 'No description available'}</p>
+                            {exercise.videoUrl && (
+                              <a 
+                                href={exercise.videoUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="plan-link"
+                              >
+                                Watch Demonstration
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="no-plan-message">No fitness plan available</p>
+                    )}
                   </div>
                 )}
 >>>>>>> origin/Dipika

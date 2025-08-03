@@ -4,7 +4,8 @@ import React, { Suspense, lazy } from 'react';
 import Navbar from './component/Navbar';
 import FitnessPlan from './component/FitnessPlan';
 import AdminDashboard from './component/AdminDashboard';
-const SmartBMI = lazy(() => import('./component/SmartBMI'));
+import Homepage from './component/Homepage';
+const SmartBMI = lazy(() => import('./component/Homepage'));
 const NutriPlanSuggest = lazy(() => import('./component/NutriPlanSuggest'));
 const BMICalculator = lazy(() => import('./component/BMICalculator'));
 
@@ -15,7 +16,7 @@ function App() {
     <Router>
       <Suspense fallback={<div>Loading...</div>}>
         <Routes>
-          <Route path="/" element={<SmartBMI />} />
+          <Route path="/" element={<Homepage/>} />
           <Route path="/bmi" element={<BMICalculator />} />
           <Route path="/nutrition" element={<NutriPlanSuggest />} />
           <Route path="/navbar" element={<Navbar />} />
