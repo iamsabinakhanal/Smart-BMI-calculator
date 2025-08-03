@@ -1,21 +1,21 @@
-import React from "react";
+import React from 'react';
+import { Link } from 'react-router-dom';
 import '../styles/Navbar.css';
 
-const Navbar = () =>{ 
-    return(
-      <header>
-        {/* NAVBAR */}
-        <div className="navbar">
-          <div className="logo">SmartBMI</div>
-          <nav className="nav-links">
-            <a href="#">Home</a>
-            <a href="#">About</a>
-            <a href="#">Contact</a>
-            <button href="#">LOGIN </button>
-            <button href="#">SIGNUP </button>
-          </nav>
+const Navbar = () => {
+  return (
+    <nav className="navbar">
+      <div className="navbar-container">
+        <Link to="/" className="navbar-logo">
+        Smart<span>BMI</span>
+        </Link>
+        <div className="navbar-links">
+          <Link to="/" className="nav-link">Home</Link>
+          <Link to="/bmi-calculator" className="nav-link">Calculate BMI</Link>
         </div>
-        </header>
-    )
-}
+      </div>
+    </nav>
+  );
+};
+
 export default Navbar;

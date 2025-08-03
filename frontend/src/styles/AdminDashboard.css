@@ -107,12 +107,14 @@
 
 .table-cell {
   padding: 12px 16px;
+  color: #333;
 }
 
 .table-cell-left {
   text-align: left;
   font-weight: 600;
   padding-left: 1.5rem;
+  color: #333;
 }
 
 .plans-table {
