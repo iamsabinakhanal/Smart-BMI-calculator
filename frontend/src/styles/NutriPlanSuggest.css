@@ -84,3 +84,111 @@ body {
     background-color: #ffdf6b;
     box-shadow: 0 0 20px #ffe44b;
   }
+
+  .nutrition-plan-container {
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  margin: 1rem 0;
+}
+
+.plan-header {
+  color: #ffd700;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.weekly-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.day-plan {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border-left: 4px solid #ff7f50;
+}
+
+.day-header {
+  color: #ffd700;
+  margin-bottom: 1rem;
+}
+
+.meals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.meal-card {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1.2rem;
+  border-radius: 6px;
+  transition: transform 0.3s ease;
+}
+
+.meal-card:hover {
+  transform: translateY(-5px);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.meal-title {
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
+.meal-details {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  color: #ccc;
+}
+
+.meal-ingredients {
+  margin-top: 0.8rem;
+}
+
+.meal-ingredients h4 {
+  color: #ffd700;
+  margin-bottom: 0.5rem;
+}
+
+.meal-ingredients ul {
+  padding-left: 1.2rem;
+  color: #ddd;
+}
+
+.recipe-link {
+  display: inline-block;
+  margin-top: 0.8rem;
+  color: #4a6fa5;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.recipe-link:hover {
+  color: #3a5a80;
+}
+
+.no-meals, .no-plan {
+  color: #aaa;
+  font-style: italic;
+  padding: 1rem;
+  text-align: center;
+}
+
+.loading-spinner {
+  color: #ffd700;
+  text-align: center;
+  padding: 2rem;
+}
+
+.error-message {
+  color: #ff6b6b;
+  padding: 1rem;
+  background: rgba(255, 0, 0, 0.1);
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}

@@ -1,0 +1,95 @@
+.fitness-plan-container {
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  margin: 1rem 0;
+}
+
+.plan-header {
+  color: #ffd700;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.weekly-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.day-plan {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border-left: 4px solid #4a6fa5;
+}
+
+.day-header {
+  color: #ffd700;
+  margin-bottom: 1rem;
+}
+
+.exercises-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.exercise-card {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1.2rem;
+  border-radius: 6px;
+  transition: transform 0.3s ease;
+}
+
+.exercise-card:hover {
+  transform: translateY(-5px);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.exercise-title {
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
+.exercise-description {
+  color: #ddd;
+  margin-bottom: 0.8rem;
+}
+
+.sets-reps {
+  color: #ffd700;
+  margin-bottom: 0.5rem;
+}
+
+.demo-link {
+  display: inline-block;
+  color: #4a6fa5;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.demo-link:hover {
+  color: #3a5a80;
+}
+
+.rest-day, .no-plan {
+  color: #aaa;
+  font-style: italic;
+  padding: 1rem;
+  text-align: center;
+}
+
+.loading-spinner {
+  color: #ffd700;
+  text-align: center;
+  padding: 2rem;
+}
+
+.error-message {
+  color: #ff6b6b;
+  padding: 1rem;
+  background: rgba(255, 0, 0, 0.1);
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}

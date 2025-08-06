@@ -5,12 +5,11 @@ import Navbar from './component/Navbar';
 import FitnessPlan from './component/FitnessPlan';
 import AdminDashboard from './component/AdminDashboard';
 import Homepage from './component/Homepage';
-const SmartBMI = lazy(() => import('./component/Homepage'));
+import FeedbackFormPage from './component/FeedbackFormPage';
 const NutriPlanSuggest = lazy(() => import('./component/NutriPlanSuggest'));
 const BMICalculator = lazy(() => import('./component/BMICalculator'));
 
 function App() {
-  const [count, setCount] = useState(0)
 
   return (
     <Router>
@@ -22,6 +21,7 @@ function App() {
           <Route path="/navbar" element={<Navbar />} />
           <Route path="/fitness" element={<FitnessPlan />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/feedback" element={<FeedbackFormPage />} />
         </Routes>
       </Suspense>
     </Router>

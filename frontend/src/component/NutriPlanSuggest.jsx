@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
+import "../styles/NutritionPlan.css";
 
 export default function NutritionPlan() {
   const location = useLocation();
   const { age, bmi, lifestyle } = location.state || {};
 
-  const [plan, setPlan] = useState(null);
+  const [plan, setPlan] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -25,9 +26,23 @@ export default function NutritionPlan() {
           bmi,
           lifestyle,
         });
-        setPlan(res.data.plan);
+
+        // Transform the data to match the admin dashboard structure
+        const transformedPlan = res.data.plan?.map(dayPlan => ({
+          day: dayPlan.day || 'Unspecified Day',
+          meals: dayPlan.meals?.map(meal => ({
+            title: meal.title || meal.mealTitle || 'Healthy Meal',
+            readyInMinutes: meal.readyInMinutes || meal.prepTime || 30,
+            servings: meal.servings || meal.portionSize || 2,
+            ingredients: meal.ingredients || ['Fresh ingredients'],
+            sourceUrl: meal.sourceUrl || meal.recipeLink || null
+          })) || []
+        })) || [];
+
+        setPlan(transformedPlan);
       } catch (err) {
         setError("Failed to load nutrition plan.");
+        console.error("API Error:", err);
       } finally {
         setLoading(false);
       }
@@ -36,29 +51,50 @@ export default function NutritionPlan() {
     fetchPlan();
   }, [age, bmi, lifestyle]);
 
-  if (loading) return <p>Loading Nutrition Plan...</p>;
-  if (error) return <p>{error}</p>;
+  if (loading) return <div className="plan-loading">Generating your personalized nutrition plan...</div>;
+  if (error) return <div className="plan-error">{error}</div>;
 
   return (
-    <div>
-      <h1>Nutrition Plan</h1>
-      {plan ? (
-        <>
-          <h2>Meals</h2>
-          <ul>
-            {plan.map((p, i) => (
-              <>
-                {p.meals.map((meal, i) => (
-                  <li key={i}>
-                    🍽️ {meal.title} — {meal.readyInMinutes} mins
-                  </li>
+    <div className="nutrition-plan">
+      <h1>Your Personalized Nutrition Plan</h1>
+      
+      {plan.length > 0 ? (
+        <div className="meal-plan">
+          {plan.map((day) => (
+            <div key={day.day} className="day-plan">
+              <h2>{day.day}</h2>
+              <div className="meals-container">
+                {day.meals.map((meal, index) => (
+                  <div key={index} className="meal-card">
+                    <h3>{meal.title}</h3>
+                    <div className="meal-details">
+                      <p>⏱️ Ready in {meal.readyInMinutes} minutes</p>
+                      <p>🍽️ Servings: {meal.servings}</p>
+                    </div>
+                    <div className="meal-ingredients">
+                      <h4>Ingredients:</h4>
+                      <ul>
+                        {meal.ingredients.map((item, i) => (
+                          <li key={i}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    {meal.sourceUrl && (
+                      <a href={meal.sourceUrl} className="recipe-link" target="_blank" rel="noopener noreferrer">
+                        View Full Recipe
+                      </a>
+                    )}
+                  </div>
                 ))}
-              </>
-            ))}
-          </ul>
-        </>
+              </div>
+            </div>
+          ))}
+        </div>
       ) : (
-        <p>No meals found.</p>
+        <div className="no-plan">
+          <p>We couldn't generate a nutrition plan for your profile.</p>
+          <p>Please try again or check your inputs.</p>
+        </div>
       )}
     </div>
   );

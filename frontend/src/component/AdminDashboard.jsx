@@ -29,8 +29,10 @@ const incomeMap = {
 export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [plans, setPlans] = useState([]);
+  const [feedbackList, setFeedbackList] = useState([]); // New state for feedback
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [loadingPlans, setLoadingPlans] = useState(false);
+  const [loadingFeedback, setLoadingFeedback] = useState(false); // New state for feedback loading
   const [error, setError] = useState(null);
   const [stats, setStats] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
@@ -55,6 +57,7 @@ export default function AdminDashboard() {
   const [showPlanDetails, setShowPlanDetails] = useState(false);
 
   const API_BASE = "http://localhost:8000/admin";
+  const FEEDBACK_API_BASE = "http://localhost:8000/api/feedback"; // New API base for feedback
 
   const fetchUsers = async () => {
     setLoadingUsers(true);
@@ -63,6 +66,7 @@ export default function AdminDashboard() {
       setUsers(res.data);
     } catch (err) {
       setError("Failed to fetch users");
+      console.error("Error fetching users:", err);
     } finally {
       setLoadingUsers(false);
     }
@@ -75,8 +79,22 @@ export default function AdminDashboard() {
       setPlans(res.data);
     } catch (err) {
       setError("Failed to fetch plans");
+      console.error("Error fetching plans:", err);
     } finally {
       setLoadingPlans(false);
+    }
+  };
+
+  const fetchFeedback = async () => { // New function to fetch feedback
+    setLoadingFeedback(true);
+    try {
+      const res = await axios.get(`${FEEDBACK_API_BASE}/all`);
+      setFeedbackList(res.data);
+    } catch (err) {
+      setError("Failed to fetch feedback");
+      console.error("Error fetching feedback:", err);
+    } finally {
+      setLoadingFeedback(false);
     }
   };
 
@@ -86,12 +104,14 @@ export default function AdminDashboard() {
       setStats(res.data);
     } catch (err) {
       setError("Failed to fetch stats");
+      console.error("Error fetching stats:", err);
     }
   };
 
   useEffect(() => {
     fetchUsers();
     fetchPlans();
+    fetchFeedback(); // Fetch feedback on component mount
     fetchStats();
   }, []);
 
@@ -117,12 +137,14 @@ export default function AdminDashboard() {
           await axios.delete(`${API_BASE}/user/${id}`);
           fetchUsers();
           fetchPlans();
-        } catch {
+          fetchFeedback(); // Also refetch feedback in case user had feedback
+        } catch (err) {
           showConfirmation(
             "Error",
             "Failed to delete user. Please try again.",
             () => {}
           );
+          console.error("Error deleting user:", err);
         }
       }
     );
@@ -136,12 +158,33 @@ export default function AdminDashboard() {
         try {
           await axios.delete(`${API_BASE}/plan/${id}`);
           fetchPlans();
-        } catch {
+        } catch (err) {
           showConfirmation(
             "Error",
             "Failed to delete plan. Please try again.",
             () => {}
           );
+          console.error("Error deleting plan:", err);
+        }
+      }
+    );
+  };
+
+  const deleteFeedback = async (id) => { // New function to delete feedback
+    showConfirmation(
+      "Delete Feedback",
+      "Are you sure you want to delete this feedback entry?",
+      async () => {
+        try {
+          await axios.delete(`${FEEDBACK_API_BASE}/${id}`);
+          fetchFeedback(); // Refetch feedback after deletion
+        } catch (err) {
+          showConfirmation(
+            "Error",
+            "Failed to delete feedback. Please try again.",
+            () => {}
+          );
+          console.error("Error deleting feedback:", err);
         }
       }
     );
@@ -195,12 +238,13 @@ export default function AdminDashboard() {
       });
       closeEditModal();
       fetchUsers();
-    } catch {
+    } catch (err) {
       showConfirmation(
         "Error",
         "Failed to update user. Please try again.",
         () => {}
       );
+      console.error("Error updating user:", err);
     }
   };
 
@@ -230,6 +274,10 @@ export default function AdminDashboard() {
             <div className="stat-item">
               Average BMI<br />
               <span className="stat-value green">{stats.averageBMI.toFixed(2)}</span>
+            </div>
+            <div className="stat-item"> {/* New stat for total feedback */}
+              Total Feedback<br />
+              <span className="stat-value">{feedbackList.length}</span>
             </div>
           </>
         ) : (
@@ -262,7 +310,7 @@ export default function AdminDashboard() {
                   <td colSpan="9" className="empty-state">No users found.</td>
                 </tr>
               )}
-              {users.map((u, i) => (
+              {users.map((u) => (
                 <tr key={u._id} className="table-row">
                   <td className="table-cell-left">{u.name}</td>
                   <td className="table-cell">{u.age}</td>
@@ -340,7 +388,7 @@ export default function AdminDashboard() {
                           </ul>
                         </div>
                       ))}
-                      <button 
+                      <button
                         onClick={() => openPlanDetails(p)}
                         className="btn btn-primary"
                         style={{ marginTop: '10px' }}
@@ -369,7 +417,7 @@ export default function AdminDashboard() {
                           </ul>
                         </div>
                       ))}
-                      <button 
+                      <button
                         onClick={() => openPlanDetails(p)}
                         className="btn btn-primary"
                         style={{ marginTop: '10px' }}
@@ -402,139 +450,189 @@ export default function AdminDashboard() {
         )}
       </section>
 
-{editingUser && (
-  <div className="modal-overlay">
-    <div className="modal-content">
-      <h2 className="modal-header">Edit User</h2>
-      <form onSubmit={submitUserUpdate}>
-        <div className="modal-body">
-          <label className="form-label">
-            Name:
-            <input
-              type="text"
-              name="name"
-              value={editFormData.name}
-              onChange={handleEditChange}
-              required
-              className="form-input"
-            />
-          </label>
-
-          <label className="form-label">
-            Age (years):
-            <input
-              type="number"
-              name="age"
-              value={editFormData.age}
-              onChange={handleEditChange}
-              required
-              className="form-input"
-            />
-          </label>
-
-          <label className="form-label">
-            Weight (kg):
-            <input
-              type="number"
-              step="0.1"
-              name="weight"
-              value={editFormData.weight}
-              onChange={handleEditChange}
-              required
-              className="form-input"
-            />
-          </label>
-
-          <label className="form-label">
-            Height (cm):
-            <input
-              type="number"
-              name="height"
-              value={editFormData.height}
-              onChange={handleEditChange}
-              required
-              className="form-input"
-            />
-          </label>
-
-          <label className="form-label">
-            Ethnicity:
-            <select
-              name="ethnicity"
-              value={editFormData.ethnicity}
-              onChange={handleEditChange}
-              required
-              className="form-select"
-            >
-              {Object.entries(ethnicityMap).map(([key, val]) => (
-                <option key={key} value={key}>{val}</option>
+      {/* New Feedback Section */}
+      <section>
+        <h2 className="section-header blue">User Feedback</h2>
+        {loadingFeedback ? (
+          <p>Loading feedback...</p>
+        ) : (
+          <table className="feedback-table">
+            <thead>
+              <tr className="table-header">
+                <th>User</th>
+                <th>Message</th>
+                <th>Rating</th>
+                <th>Submitted At</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {feedbackList.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="empty-state">No feedback found.</td>
+                </tr>
+              )}
+              {feedbackList.map((feedback) => (
+                <tr key={feedback._id} className="table-row">
+                  <td className="table-cell-left">
+                    {/* Prioritize feedback.name, then feedback.userId?.name, then "Anonymous" */}
+                    {feedback.name || (feedback.userId ? feedback.userId.name : "Anonymous")}
+                  </td>
+                  <td className="table-cell feedback-message-cell">{feedback.message}</td>
+                  <td className="table-cell">{feedback.rating || 'N/A'}</td>
+                  <td className="table-cell">
+                    {new Date(feedback.createdAt).toLocaleDateString()}
+                    <br />
+                    {new Date(feedback.createdAt).toLocaleTimeString()}
+                  </td>
+                  <td className="table-cell">
+                    <button
+                      onClick={() => deleteFeedback(feedback._id)}
+                      className="btn btn-danger"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
               ))}
-            </select>
-          </label>
+            </tbody>
+          </table>
+        )}
+      </section>
 
-          <label className="form-label">
-            Activity Level:
-            <select
-              name="activityLevel"
-              value={editFormData.activityLevel}
-              onChange={handleEditChange}
-              required
-              className="form-select"
-            >
-              {Object.entries(activityLevelMap).map(([key, val]) => (
-                <option key={key} value={key}>{val}</option>
-              ))}
-            </select>
-          </label>
+      {editingUser && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2 className="modal-header">Edit User</h2>
+            <form onSubmit={submitUserUpdate}>
+              <div className="modal-body">
+                <label className="form-label">
+                  Name:
+                  <input
+                    type="text"
+                    name="name"
+                    value={editFormData.name}
+                    onChange={handleEditChange}
+                    required
+                    className="form-input"
+                  />
+                </label>
 
-          <label className="form-label">
-            Income Ratio:
-            <select
-              name="income"
-              value={editFormData.income}
-              onChange={handleEditChange}
-              required
-              className="form-select"
-            >
-              {Object.entries(incomeMap).map(([key, val]) => (
-                <option key={key} value={key}>{val}</option>
-              ))}
-            </select>
-          </label>
+                <label className="form-label">
+                  Age (years):
+                  <input
+                    type="number"
+                    name="age"
+                    value={editFormData.age}
+                    onChange={handleEditChange}
+                    required
+                    className="form-input"
+                  />
+                </label>
 
-          <label className="form-label">
-            BMI Result:
-            <input
-              type="number"
-              step="0.1"
-              name="bmi"
-              value={editFormData.bmi}
-              onChange={handleEditChange}
-              required
-              className="form-input"
-            />
-          </label>
+                <label className="form-label">
+                  Weight (kg):
+                  <input
+                    type="number"
+                    step="0.1"
+                    name="weight"
+                    value={editFormData.weight}
+                    onChange={handleEditChange}
+                    required
+                    className="form-input"
+                  />
+                </label>
+
+                <label className="form-label">
+                  Height (cm):
+                  <input
+                    type="number"
+                    name="height"
+                    value={editFormData.height}
+                    onChange={handleEditChange}
+                    required
+                    className="form-input"
+                  />
+                </label>
+
+                <label className="form-label">
+                  Ethnicity:
+                  <select
+                    name="ethnicity"
+                    value={editFormData.ethnicity}
+                    onChange={handleEditChange}
+                    required
+                    className="form-select"
+                  >
+                    {Object.entries(ethnicityMap).map(([key, val]) => (
+                      <option key={key} value={key}>{val}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="form-label">
+                  Activity Level:
+                  <select
+                    name="activityLevel"
+                    value={editFormData.activityLevel}
+                    onChange={handleEditChange}
+                    required
+                    className="form-select"
+                  >
+                    {Object.entries(activityLevelMap).map(([key, val]) => (
+                      <option key={key} value={key}>{val}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="form-label">
+                  Income Ratio:
+                  <select
+                    name="income"
+                    value={editFormData.income}
+                    onChange={handleEditChange}
+                    required
+                    className="form-select"
+                  >
+                    {Object.entries(incomeMap).map(([key, val]) => (
+                      <option key={key} value={key}>{val}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="form-label">
+                  BMI Result:
+                  <input
+                    type="number"
+                    step="0.1"
+                    name="bmi"
+                    value={editFormData.bmi}
+                    onChange={handleEditChange}
+                    required
+                    className="form-input"
+                  />
+                </label>
+              </div>
+
+              <div className="form-actions">
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  className="btn btn-secondary btn-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-lg"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-
-        <div className="form-actions">
-          <button
-            type="button"
-            onClick={closeEditModal}
-            className="btn btn-secondary btn-lg"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="btn btn-primary btn-lg"
-          >
-            Save Changes
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-)}
+      )}
 
       {showConfirmDialog && (
         <div className="modal-overlay">
@@ -566,14 +664,14 @@ export default function AdminDashboard() {
               <h2 className="plan-details-title">
                 Plan for {selectedPlan.userId?.name || "User"}
               </h2>
-              <button 
+              <button
                 onClick={closePlanDetails}
                 className="plan-details-close"
               >
                 &times;
               </button>
             </div>
-            
+
             <div className="plan-details-content">
               <div className="plan-details-column">
                 <div className="plan-details-section">
@@ -595,7 +693,7 @@ export default function AdminDashboard() {
                   ))}
                 </div>
               </div>
-              
+
               <div className="plan-details-column">
                 <div className="plan-details-section">
                   <h3 className="plan-details-section-title">Fitness Plan</h3>
